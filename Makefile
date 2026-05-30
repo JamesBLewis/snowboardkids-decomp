@@ -49,7 +49,7 @@ IDO_CC = $(PYTHON) $(ASM_PROC) $(CC) -- $(AS) $(ASFLAGS) --
 
 ASFLAGS      = -G 0 -I include -mips3 -mabi=32
 C_DEFINES    = -DLANGUAGE_C -D_LANGUAGE_C -D_MIPS_SZLONG=32 -DNDEBUG
-CFLAGS       = -c -O1 -mips2 -G 0 -non_shared -fullwarn -Xcpluscomm \
+CFLAGS       = -c -O2 -mips2 -G 0 -non_shared -fullwarn -Xcpluscomm \
                -nostdinc -Wab,-r4300_mul -woff 649,838,712,516 \
                -Iinclude $(C_DEFINES)
 OBJCOPYFLAGS = -O binary
@@ -101,7 +101,6 @@ $(BUILD_DIR)/%.o: %.s
 	@mkdir -p $(dir $@)
 	$(CPP) $(CPPFLAGS) -I include $< | $(AS) $(ASFLAGS) -o $@
 
-# *.c -> *.o
 $(BUILD_DIR)/%.o: %.c
 	@mkdir -p $(dir $@)
 	$(IDO_CC) $(CFLAGS) -o $@ $<
