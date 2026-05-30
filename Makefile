@@ -5,6 +5,7 @@ BASENAME  = snowboardkids
 BUILD_DIR = build
 ASM_DIRS  = asm asm/data
 BIN_DIRS  = assets
+SRC_DIRS  = src
 TOOLS_DIR = tools
 
 # Tools
@@ -33,17 +34,26 @@ else
 endif
 
 AS      = $(CROSS)as
+CC      = $(TOOLS_DIR)/ido-recomp/linux/cc
 LD      = $(CROSS)ld
 OBJDUMP = $(CROSS)objdump
 OBJCOPY = $(CROSS)objcopy
 PYTHON  = python3
 SPLAT   = $(PYTHON) -m splat split
 N64CRC  = $(TOOLS_DIR)/n64crc.py
+ASM_PROC = $(TOOLS_DIR)/asm-processor/build.py
+
+IDO_CC = $(PYTHON) $(ASM_PROC) $(CC) -- $(AS) $(ASFLAGS) --
 
 # Flags
 
 ASFLAGS      = -G 0 -I include -mips3 -mabi=32
+C_DEFINES    = -DLANGUAGE_C -D_LANGUAGE_C -D_MIPS_SZLONG=32 -DNDEBUG
+CFLAGS       = -c -O1 -mips2 -G 0 -non_shared -fullwarn -Xcpluscomm \
+               -nostdinc -Wab,-r4300_mul -woff 649,838,712,516 \
+               -Iinclude $(C_DEFINES)
 OBJCOPYFLAGS = -O binary
+RM_MDEBUG    = $(OBJCOPY) --remove-section .mdebug $@
 
 LD_SCRIPT      = $(BASENAME).ld
 LINKER_SCRIPTS = linker_scripts/hardware_regs.ld linker_scripts/libultra_syms.ld
@@ -58,10 +68,13 @@ LDFLAGS        = -T $(LD_SCRIPT) -Map $(TARGET).map \
 ASM_S_FILES := $(foreach dir,$(ASM_DIRS),$(wildcard $(dir)/*.s))
 ASM_O_FILES := $(patsubst %.s,$(BUILD_DIR)/%.o,$(ASM_S_FILES))
 
+C_FILES     := $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.c))
+C_O_FILES   := $(patsubst %.c,$(BUILD_DIR)/%.o,$(C_FILES))
+
 BIN_FILES   := $(foreach dir,$(BIN_DIRS),$(wildcard $(dir)/*.bin))
 BIN_O_FILES := $(patsubst %.bin,$(BUILD_DIR)/%.o,$(BIN_FILES))
 
-O_FILES := $(ASM_O_FILES) $(BIN_O_FILES)
+O_FILES := $(shell grep -E 'build/(asm|assets|src)/.+\.o' $(LD_SCRIPT) -o | sort | uniq)
 
 TARGET = $(BUILD_DIR)/$(BASENAME)
 
@@ -74,6 +87,7 @@ all: dirs $(TARGET).z64 verify
 dirs:
 	@mkdir -p $(BUILD_DIR)/asm/data
 	@mkdir -p $(BUILD_DIR)/assets
+	@mkdir -p $(BUILD_DIR)/src
 
 extract: check
 	$(SPLAT) $(BASENAME).yaml
@@ -86,6 +100,12 @@ extract: check
 $(BUILD_DIR)/%.o: %.s
 	@mkdir -p $(dir $@)
 	$(CPP) $(CPPFLAGS) -I include $< | $(AS) $(ASFLAGS) -o $@
+
+# *.c -> *.o
+$(BUILD_DIR)/%.o: %.c
+	@mkdir -p $(dir $@)
+	$(IDO_CC) $(CFLAGS) -o $@ $<
+	$(RM_MDEBUG)
 
 # *.bin -> *.o
 $(BUILD_DIR)/%.o: %.bin

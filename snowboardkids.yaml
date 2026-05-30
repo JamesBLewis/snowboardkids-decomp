@@ -43,6 +43,7 @@ options:
   libultra_symbols: True
   hardware_regs: True
   gfx_ucode: f3dex2
+
 segments:
   - name: header
     type: header
@@ -144,7 +145,7 @@ segments:
       - [0xA1A80, asm]
       - [0xA2220, asm]
       - [0xA2490, asm]
-      - [0xA2650, asm]
+      - [0xA2650, c]
       - [0xA27A0, asm]
       - [0xA28F0, asm]
       - [0xA2DF0, asm]
