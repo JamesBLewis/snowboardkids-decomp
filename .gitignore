@@ -9,3 +9,8 @@ build
 tools/ido-recomp
 .decomp_dev_secret
 .push_secrets
+
+# Permuter
+src/ctx.c
+src/temp.c
+nonmatchings
