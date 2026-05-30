@@ -1,0 +1,90 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/block-unverified-commits.sh"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/block-make-command.sh"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/block-splat-split.sh"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/block-ctx-file.sh"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/block-temp-file.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/block-ctx-file.sh"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/block-temp-file.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/block-ctx-file.sh"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/block-temp-file.sh"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/block-asm-edits.sh"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/block-sha1-edits.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/block-ctx-file.sh"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/block-temp-file.sh"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/block-asm-edits.sh"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/block-sha1-edits.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "clangd-lsp@claude-plugins-official": true
+  },
+  "autoMemoryEnabled": false
+}
