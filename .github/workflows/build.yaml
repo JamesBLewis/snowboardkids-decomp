@@ -42,6 +42,10 @@ jobs:
       - name: Copy decrypted rom to main repo
         run: cp baserom/snowboardkids.z64 main/
 
+      - name: Build toolchain
+        run: make -s -C tools
+        working-directory: main
+
       - name: Install Python deps
         run: |
           python3 -m venv .venv
