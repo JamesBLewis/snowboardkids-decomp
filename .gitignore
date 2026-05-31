@@ -14,3 +14,5 @@ tools/ido-recomp
 src/ctx.c
 src/temp.c
 nonmatchings
+
+report.json

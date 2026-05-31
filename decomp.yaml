@@ -1,0 +1,23 @@
+name: Snowboard Kids
+repo: https://github.com/cdlewis/snowboardkids-decomp
+platform: n64
+build_system: make
+versions:
+  - name: usa
+    fullname: usa
+    sha1: 1583bacc9046a360df8ea4d536942155247e154c
+    paths:
+      target: "snowboardkids.z64"
+      build_dir: "build"
+      map: "build/snowboardkids.map"
+      compiled_target: "build/snowboardkids.z64"
+      elf: "build/snowboardkids.elf"
+      expected_dir: "expected/"
+      asm: "asm"
+      nonmatchings: "asm/nonmatchings"
+tools:
+  mapfile_parser:
+    progress_report:
+      output: report.json
+      check_asm_paths: False
+      report_data: True
