@@ -42,10 +42,6 @@ jobs:
       - name: Copy decrypted rom to main repo
         run: cp baserom/snowboardkids.z64 main/
 
-      - name: Install C deps
-        run: make setup
-        working-directory: main
-
       - name: Install Python deps
         run: |
           python3 -m venv .venv
