@@ -1,0 +1,3 @@
+candidate_source: "cat snowboardkids.yaml | grep ultra: | sort | uniq"
+prompt: "Use the match-ultralib-segment skill to match: `$INPUT`"
+claude_command: glaude
