@@ -30,7 +30,6 @@ options:
     - symbol_addrs.txt
   reloc_addrs_path:
     - reloc_addrs.txt
-
   # undefined_funcs_auto_path: undefined_funcs_auto.txt
   # undefined_syms_auto_path: undefined_syms_auto.txt
 
@@ -140,6 +139,7 @@ segments:
       - [0x9CE70, asm]
       - [0xA0E90, asm]
       - [0xA0EC0, asm]
+      # ultralib starts around here
       - [0xA0F30, asm]
       - [0xA12F0, asm]
       - [0xA1440, asm]
@@ -148,7 +148,7 @@ segments:
       - [0xA1A80, asm]
       - [0xA2220, asm]
       - [0xA2490, asm]
-      - [0xA2650, c]
+      - [0xA2650, c, ultra/io/pfsnumfiles]
       - [0xA27A0, asm]
       - [0xA28F0, asm]
       - [0xA2DF0, asm]
@@ -205,6 +205,7 @@ segments:
       - [0xAB490, asm]
       - [0xAB570, asm]
       - [0xAB880, asm]
+      # ultralib ends around here
       - [0xABE50, asm]
       - [0xABFD0, asm]
       - [0xAC3E0, asm]
