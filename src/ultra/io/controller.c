@@ -1,11 +1,8 @@
-#define __osContPifRam D_8015CA00
-
 #include "PRinternal/macros.h"
 #include "PR/os_internal.h"
 #include "PRinternal/controller.h"
 #include "PRinternal/siint.h"
 
-extern OSPifRam D_8015CA00;
 extern OSTimer __osEepromTimer;
 extern OSMesgQueue __osEepromTimerQ;
 extern OSMesg __osEepromTimerMsg;

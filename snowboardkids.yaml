@@ -139,7 +139,6 @@ segments:
       - [0x9CE70, asm]
       - [0xA0E90, asm]
       - [0xA0EC0, asm]
-      # ultralib starts around here
       - [0xA0F30, c, ultra/io/controller]
       - [0xA12F0, asm]
       - [0xA1440, asm]
@@ -151,68 +150,69 @@ segments:
       - [0xA2490, asm] # ultra:pfsisplug.c (guess)
       - [0xA2650, c, ultra/io/pfsnumfiles]
       - [0xA27A0, asm]
-      - [0xA28F0, asm]
-      - [0xA2DF0, asm]
+      - [0xA28F0, asm] # ultra:pfsreadwritefile.c
+      - [0xA2DF0, asm] # ultra:pfsallocatefile.c
       - [0xA35A0, asm]
-      - [0xA3800, asm]
-      - [0xA4100, asm]
+      - [0xA3800, asm] # ultra:pfsfilestate.c
+      - [0xA4100, asm] # ultra:sprintf.c
       - [0xA4180, asm]
-      - [0xA41C0, asm]
-      - [0xA4500, asm]
+      - [0xA41C0, asm] # ultra:ll.c
+      - [0xA4500, asm] # ultra:perspective.c
       - [0xA4790, asm]
-      - [0xA4AE0, asm]
+      - [0xA4AE0, asm] # ultra:stopthread.c
       - [0xA4C70, asm]
-      - [0xA4DB0, asm]
-      - [0xA4ED0, asm]
-      - [0xA4FE0, asm]
-      - [0xA51A0, asm]
-      - [0xA5500, asm]
-      - [0xA5570, asm]
-      - [0xA55E0, asm]
-      - [0xA5610, asm]
-      - [0xA58D0, asm]
+      - [0xA4DB0, asm] # ultra:viblack.c
+      - [0xA4ED0, asm] # ultra:pidma.c
+      - [0xA4FE0, asm] # ultra:visetspecial.c
+      - [0xA51A0, asm] # ultra:vimgr.c
+      - [0xA5500, asm] # ultra:visetmode.c
+      - [0xA5570, asm] # ultra:visetevent.c
+      - [0xA55E0, asm] # ultra:writebackdcache.s
+      - [0xA5610, asm] # ultra:sptask.c
+      - [0xA58D0, asm] # ultra:sptaskyield.c
       - [0xA5B20, asm]
-      - [0xA5B80, asm]
-      - [0xA5E00, asm]
-      - [0xA5E80, asm]
-      - [0xA5F10, asm]
-      - [0xA5FB0, asm]
-      - [0xA6050, asm]
-      - [0xA60E0, asm]
-      - [0xA6170, asm]
-      - [0xA65D0, asm]
-      - [0xA6680, asm]
+      - [0xA5B80, asm] # ultra:synaddplayer.c
+      - [0xA5E00, asm] # ultra:synstopvoice.c
+      - [0xA5E80, asm] # ultra:alSynStartVoice.c
+      - [0xA5F10, asm] # ultra:synsetfxmix.c
+      - [0xA5FB0, asm] # ultra:synsetvol.c
+      - [0xA6050, asm] # ultra:synsetpan.c
+      - [0xA60E0, asm] # ultra:synsetpitch.c
+      - [0xA6170, asm] # ultra:sinf.c
+      - [0xA65D0, asm] # ultra:aisetnextbuf.c
+      - [0xA6680, asm] # ultra:aigetlen.c
       - [0xA6690, asm]
-      - [0xA6DF0, asm]
-      - [0xA6E80, asm]
-      - [0xA6F60, asm]
-      - [0xA7010, asm]
-      - [0xA79E0, asm]
-      - [0xA7D50, asm]
+      - [0xA6DB0, asm] # ultra:interrupt.s
+      - [0xA6DF0, asm] # ultra:gettime.c
+      - [0xA6E80, asm] # ultra:settimer.c
+      - [0xA6F60, asm] # ultra:sirawdma.c
+      - [0xA7010, asm] # ultra:siacs.c
+      - [0xA79E0, asm] # ultra:pfsisplug.c
+      - [0xA7D50, asm] # ultra:crc.c
       - [0xA85E0, asm]
-      - [0xA86F0, asm]
+      - [0xA86F0, asm] # ultra:contpfs.c
       - [0xA9450, asm]
       - [0xAAB70, asm]
       - [0xAAC10, asm]
-      - [0xAAE80, asm]
+      - [0xAAE80, asm] # ultra:cosf.c
       - [0xAAFF0, asm]
-      - [0xAB010, asm]
+      - [0xAB010, asm] # ultra:sprawwrite.c
       - [0xAB0C0, asm]
       - [0xAB140, asm]
       - [0xAB1A0, asm]
-      - [0xAB200, asm]
-      - [0xAB2A0, asm]
-      - [0xAB390, asm]
-      - [0xAB490, asm]
-      - [0xAB570, asm]
-      - [0xAB880, asm]
-      # ultralib ends around here
-      - [0xABE50, asm]
+      - [0xAB200, asm] # ultra:bzero.s
+      - [0xAB2A0, asm] # ultra:cartrominit.c
+      - [0xAB390, asm] # ultra:leodiskinit.c
+      - [0xAB490, asm] # libmus:player_api.c
+      - [0xAB570, asm] # ultra:pirawdma.c
+      - [0xAB880, asm] # ultra:devmgr.c
+      - [0xABE50, asm] # libmus:player_api.c
       - [0xABFD0, asm]
+      - [0xAC3D0, asm] # ultra:getactivequeue.c
       - [0xAC3E0, asm]
       - [0xAC740, asm]
-      - [0xAC750, asm]
-      - [0xACA60, asm]
+      - [0xAC750, asm] # ultra:_bcopy
+      - [0xACA60, asm] 
       - [0xACA70, asm]
       - [0xACAB0, asm]
       - [0xACB40, asm]
