@@ -1,5 +1,7 @@
 Snowboard Kids
 [![Build](https://github.com/cdlewis/snowboardkids-decomp/actions/workflows/build.yaml/badge.svg)](https://github.com/cdlewis/snowboardkids-decomp/actions/workflows/build.yaml)
+[![Code](https://decomp.dev/cdlewis/snowboardkids-decomp/us.svg?mode=shield&measure=code&label=Code)](https://decomp.dev/cdlewis/snowboardkids-decomp)
+[![Data](https://decomp.dev/cdlewis/snowboardkids-decomp/us.svg?mode=shield&measure=data&label=Data)](https://decomp.dev/cdlewis/snowboardkids-decomp)
 [![Chat](https://img.shields.io/discord/601153657966428193?color=%237289DA&logo=discord&logoColor=%23FFFFFF)](https://discord.gg/DuYH3Fh)
 =============
 
