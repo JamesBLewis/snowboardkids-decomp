@@ -145,7 +145,7 @@ segments:
       - [0xA1590, c, ultra/os/recvmesg]
       - [0xA16D0, c, ultra/io/contreaddata]
       - [0xA1930, asm]
-      - [0xA1A80, asm] # ultra:motor.c
+      - [0xA1A80, c, ultra/io/motor]
       - [0xA2220, asm] # ultra:pfsinitpak.c
       - [0xA2490, asm] # ultra:pfsisplug.c (guess)
       - [0xA2650, c, ultra/io/pfsnumfiles]
