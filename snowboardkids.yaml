@@ -143,7 +143,7 @@ segments:
       - [0xA12F0, asm]
       - [0xA1440, asm]
       - [0xA1590, c, ultra/os/recvmesg]
-      - [0xA16D0, asm] # ultra:contreaddata.c
+      - [0xA16D0, c, ultra/io/contreaddata]
       - [0xA1930, asm]
       - [0xA1A80, asm] # ultra:motor.c
       - [0xA2220, asm] # ultra:pfsinitpak.c
