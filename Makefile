@@ -1,5 +1,27 @@
 BASENAME  = snowboardkids
 
+ifndef QUIET
+  PRINTF = @printf
+else
+  PRINTF = @true
+endif
+
+VERBOSE ?= 0
+ifeq ($(VERBOSE),0)
+  V := @
+endif
+
+# Colours
+
+NO_COL  := \033[0m
+RED     := \033[0;31m
+RED2    := \033[1;31m
+GREEN   := \033[0;32m
+YELLOW  := \033[0;33m
+BLUE    := \033[0;34m
+PINK    := \033[0;35m
+CYAN    := \033[0;36m
+
 # Directories
 
 BUILD_DIR = build
@@ -79,7 +101,7 @@ C_O_FILES   := $(patsubst %.c,$(BUILD_DIR)/%.o,$(C_FILES))
 BIN_FILES   := $(foreach dir,$(BIN_DIRS),$(wildcard $(dir)/*.bin))
 BIN_O_FILES := $(patsubst %.bin,$(BUILD_DIR)/%.o,$(BIN_FILES))
 
-O_FILES := $(shell grep -E 'build/(asm|assets|src)/.+\.o' $(LD_SCRIPT) -o | sort | uniq)
+O_FILES := $(shell grep -E 'build/(asm|assets|src)/.+\.o' $(LD_SCRIPT) -o 2>/dev/null | sort | uniq)
 
 TARGET = $(BUILD_DIR)/$(BASENAME)
 
@@ -95,7 +117,8 @@ dirs:
 	@mkdir -p $(BUILD_DIR)/src
 
 extract: check
-	$(SPLAT) $(BASENAME).yaml
+	$(PRINTF) "[$(CYAN) splat  $(NO_COL)]  Extracting $(BASENAME).yaml\n"
+	$(V)$(SPLAT) $(BASENAME).yaml
 
 #################
 ## COMPILATION ##
@@ -104,49 +127,57 @@ extract: check
 # *.s -> *.o (through C preprocessor)
 $(BUILD_DIR)/%.o: %.s
 	@mkdir -p $(dir $@)
-	$(CPP) $(CPPFLAGS) -I include $< | $(AS) $(ASFLAGS) -o $@
+	$(PRINTF) "[$(GREEN)   as   $(NO_COL)]  $<\n"
+	$(V)$(CPP) $(CPPFLAGS) -I include $< | $(AS) $(ASFLAGS) -o $@
 
 $(BUILD_DIR)/%.o: %.c
 	@mkdir -p $(dir $@)
-	$(IDO_CC) $(CFLAGS) $(C_OPT) -o $@ $<
-	$(RM_MDEBUG)
+	$(PRINTF) "[$(GREEN)   c    $(NO_COL)]  $<\n"
+	$(V)$(IDO_CC) $(CFLAGS) $(C_OPT) -o $@ $<
+	$(V)$(RM_MDEBUG)
 
 # *.bin -> *.o
 $(BUILD_DIR)/%.o: %.bin
 	@mkdir -p $(dir $@)
-	$(LD) -r -b binary -o $@ $<
+	$(PRINTF) "[$(PINK) linker $(NO_COL)]  $<\n"
+	$(V)$(LD) -r -b binary -o $@ $<
 
 # *.o -> *.elf
 $(TARGET).elf: $(LD_SCRIPT) undefined_funcs_auto.txt undefined_syms_auto.txt $(LINKER_SCRIPTS) $(O_FILES)
-	$(LD) $(LDFLAGS) -o $@
+	$(PRINTF) "[$(PINK) linker $(NO_COL)]  Linking $(TARGET).elf\n"
+	$(V)$(LD) $(LDFLAGS) -o $@
 
 # *.elf -> *.bin
 $(TARGET).bin: $(TARGET).elf
-	$(OBJCOPY) $(OBJCOPYFLAGS) $< $@
+	$(PRINTF) "[$(CYAN) objcpy $(NO_COL)]  $<\n"
+	$(V)$(OBJCOPY) $(OBJCOPYFLAGS) $< $@
 
 # *.bin -> *.z64 (with N64 CRC)
 $(TARGET).z64: $(TARGET).bin
-	cp $< $@
-	$(PYTHON) $(N64CRC) $@
+	$(PRINTF) "[$(CYAN) n64crc $(NO_COL)]  $@\n"
+	$(V)cp $< $@
+	$(V)$(PYTHON) $(N64CRC) $@
 
 # SHA1 verification
 verify: $(TARGET).z64
-	shasum --check $(BASENAME).sha1
+	$(PRINTF) "[$(GREEN) verify $(NO_COL)]  Checking $(BASENAME).sha1\n"
+	$(V)shasum --check $(BASENAME).sha1
 
 # Check baserom exists
 .PHONY: check
 check:
-	@if [ ! -f $(BASENAME).z64 ]; then echo "Error: $(BASENAME).z64 not found"; exit 1; fi
+	@if [ ! -f $(BASENAME).z64 ]; then echo "Error: $(BASENAME).z64 not found" >&2; exit 1; fi
 
 ###########
 ## CLEAN ##
 ###########
 
 clean:
-	rm -rf asm
-	rm -rf assets
-	rm -rf build
-	rm -f *auto.txt
+	$(PRINTF) "[$(YELLOW) clean  $(NO_COL)]  Removing generated files\n"
+	$(V)rm -rf asm
+	$(V)rm -rf assets
+	$(V)rm -rf build
+	$(V)rm -f *auto.txt
 
 ### Settings
 .SECONDARY:
