@@ -29,7 +29,7 @@ description: Match a given segment to a libultra ROM segment. Use this when conv
    rg -n "osPfsNumFiles" ../ultralib/src ../ultralib/include
    ```
 
-3. Copy or port the upstream file into `src/ultra`, preserving the source subtree. Verify macro values in local headers before using semantic-looking names; for example `CONT_CMD_NOP` may be `0xff`, while the target may want a literal `0`.
+3. Copy or port the upstream file into `src/ultra`, preserving the source subtree. Verify macro values in local headers before using semantic-looking names; for example `CONT_CMD_NOP` may be `0xff`, while the target may want a literal `0`. Treat the upstream as a starting point — the compiled ROM may have been built from a different version of the source. Build early and let the diff guide iterations rather than analyzing the assembly exhaustively beforehand.
 
    ```text
    ../ultralib/src/os/recvmesg.c -> src/ultra/os/recvmesg.c
@@ -43,7 +43,7 @@ description: Match a given segment to a libultra ROM segment. Use this when conv
    - [0xA2650, c, ultra/io/pfsnumfiles]
    ```
 
-5. If the new source calls functions or references data already present elsewhere in the ROM, add the real ultralib symbol names to `symbol_addrs.txt`. Avoid using aliases to make the work with unlabeled symbols (those starting with D_ or func_):
+5. If the new source calls functions or references data already present elsewhere in the ROM, add the real ultralib symbol names to `symbol_addrs.txt`. Avoid using aliases to make the work with unlabeled symbols (those starting with D_ or func_). **Important:** symbols with `0x700...` addresses are splat placeholders and must be converted to runtime `0x800...` VRAM addresses before the linker can resolve them. Scan for any `0x700A` entries that the new source calls:
 
    ```text
    __osDisableInt = 0x800A61B0; // type:func
@@ -70,6 +70,16 @@ The game code uses -O2 but ultralib specifically should use -O1 instead. The bui
 ```make
 $(BUILD_DIR)/src/ultra/io/%.o: C_OPT = -O1
 ```
+
+## VERSION_I Specifics
+
+This project uses `BUILD_VERSION=VERSION_I`. When porting upstream ultralib source, apply these adjustments:
+
+- `__osPfsSelectBank` takes 1 argument (`OSPfs*`), not 2. The `SELECT_BANK` macro sets `pfs->activebank` then calls `__osPfsSelectBank(pfs)`.
+- No `__osPfsCheckRamArea` function — skip any `BUILD_VERSION >= VERSION_J` blocks that call it.
+- Uses `for` loops instead of `bcopy` for memory copies.
+- No `PFS_ID_BROKEN` status flag handling.
+- The upstream source may contain calls that were not present in the actual VERSION_I build. Trust the assembly over the upstream — if a call appears in upstream but not in the target assembly, omit it.
 
 ## Data and Rodata matching
 
