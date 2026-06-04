@@ -17,9 +17,12 @@ This is a matching decompilation project for Snowboard Kids (N64). The goal is t
 ## Tools
 
 - `./tools/build-and-verify.sh` rebuilds extracted assets/asm, builds the ROM, and verifies the SHA1 checksum.
+- `python3 tools/asm-differ/diff.py --no-pager <function name>` compares compiled assembly against the target for a specific function.
 - `./tools/claude --bootstrap-only <function name>` creates a per-function matching workspace under `nonmatchings/`.
 - `./build.sh <file>.c` inside a generated matching workspace compiles one attempt and compares it to the target function.
 - `python3 tools/project_status.py` shows currently non-matching functions when available.
+- `python3 tools/data-differ/data_diff.py <symbol>` or `./tools/diff-data <symbol>` compares binary data between the target ROM and compiled output for a specific data symbol.
+- `python3 tools/data-differ/data_diff.py --find-first-mismatch` scans data symbols in ROM order and shows the first mismatch. Use this after checksum failures when a data variable may be responsible.
 
 ## Decompiling Assembly to C
 
@@ -38,6 +41,30 @@ When a function matches, replace the relevant `#pragma GLOBAL_ASM("asm/nonmatchi
 ```
 
 If checksum verification fails after source changes, inspect all affected functions in the modified file, especially functions using the same structs or globals.
+Use `python3 tools/asm-differ/diff.py --no-pager <function name>` to compare each affected function against target assembly from the project root.
+
+## Matching Data
+
+After changing data definitions or data-related struct layout, build first:
+
+```bash
+./tools/build-and-verify.sh
+```
+
+If the checksum fails and a data mismatch is suspected, locate the first mismatching symbol:
+
+```bash
+python3 tools/data-differ/data_diff.py --find-first-mismatch
+```
+
+For a known symbol, compare it directly:
+
+```bash
+python3 tools/data-differ/data_diff.py <symbol>
+./tools/diff-data <symbol>
+```
+
+The data differ uses `symbol_addrs.txt` metadata for single-symbol diffs. Symbols need ROM and size annotations such as `rom:0x... size:0x...` for precise comparisons.
 
 ## Validation Checklist
 

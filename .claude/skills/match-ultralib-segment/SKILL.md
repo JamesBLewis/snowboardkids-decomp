@@ -57,6 +57,14 @@ The game code uses -O2 but ultralib specifically should use -O1 instead. You can
 $(BUILD_DIR)/src/ultra/io/%.o: C_OPT = -O1
 ```
 
+## Data and Rodata matching
+
+Ultralib segments may contain data and/or rodata which must be similarly matched. These are likely unlabelled. You will need to find the appropriate data/rodata segment and link it back to your matched ultralib segment, e.g:
+
+```
+- [0xE15B0, .rodata, myUltraLibSegment]
+```
+
 ## Avoid
 
 - Do not mutate linker scripts with `perl -0pi`, `perl -pe`, or similar build hacks.
