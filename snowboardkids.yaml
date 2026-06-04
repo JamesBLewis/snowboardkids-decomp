@@ -143,11 +143,12 @@ segments:
       - [0xA0F30, c, ultra/io/controller]
       - [0xA12F0, asm]
       - [0xA1440, asm]
-      - [0xA16D0, asm]
+      - [0xA1590, c, ultra/os/recvmesg]
+      - [0xA16D0, asm] # ultra:contreaddata.c
       - [0xA1930, asm]
-      - [0xA1A80, asm]
-      - [0xA2220, asm]
-      - [0xA2490, asm]
+      - [0xA1A80, asm] # ultra:motor.c
+      - [0xA2220, asm] # ultra:pfsinitpak.c
+      - [0xA2490, asm] # ultra:pfsisplug.c (guess)
       - [0xA2650, c, ultra/io/pfsnumfiles]
       - [0xA27A0, asm]
       - [0xA28F0, asm]

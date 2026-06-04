@@ -58,6 +58,7 @@ OBJCOPYFLAGS = -O binary
 RM_MDEBUG    = $(OBJCOPY) --remove-section .mdebug $@
 
 $(BUILD_DIR)/src/ultra/io/%.o: C_OPT = -O1
+$(BUILD_DIR)/src/ultra/os/%.o: C_OPT = -O1
 
 LD_SCRIPT      = $(BASENAME).ld
 LINKER_SCRIPTS = linker_scripts/hardware_regs.ld linker_scripts/libultra_syms.ld
