@@ -53,7 +53,7 @@ C_DEFINES    = -DLANGUAGE_C -D_LANGUAGE_C -D_MIPS_SZLONG=32 -DNDEBUG \
 C_OPT        = -O2
 CFLAGS       = -c -mips2 -G 0 -non_shared -fullwarn -Xcpluscomm \
                -nostdinc -Wab,-r4300_mul -woff 649,838,712,516 \
-               -Iinclude -I../ultralib/include $(C_DEFINES)
+               -Iinclude -Iincludes $(C_DEFINES)
 OBJCOPYFLAGS = -O binary
 RM_MDEBUG    = $(OBJCOPY) --remove-section .mdebug $@
 
