@@ -140,7 +140,7 @@ segments:
       - [0xA0E90, asm]
       - [0xA0EC0, asm]
       # ultralib starts around here
-      - [0xA0F30, asm]
+      - [0xA0F30, c, ultra/io/controller]
       - [0xA12F0, asm]
       - [0xA1440, asm]
       - [0xA16D0, asm]

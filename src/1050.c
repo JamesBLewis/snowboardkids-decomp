@@ -1,6 +1,6 @@
 #include "common.h"
 
-void func_800A0990(void *, void *, s32);
+void osRecvMesg(void *, void *, s32);
 void func_800A0D30(void *, s32, s32, u16);
 extern s32 D_800E4B78;
 extern s32 D_800E4BB0;
@@ -29,7 +29,7 @@ void func_80000DB4(u16 arg0) {
     sp1C = 0;
 
     func_800A0D30(&D_800E4B78, arg0 + 0x30, 1, arg0);
-    func_800A0990(&D_800E4BB0, &sp1C, 1);
+    osRecvMesg(&D_800E4BB0, &sp1C, 1);
 }
 
 #pragma GLOBAL_ASM("asm/nonmatchings/1050/func_80000E00.s")
