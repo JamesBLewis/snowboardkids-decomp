@@ -149,7 +149,7 @@ segments:
       - [0xA2220, c, ultra/io/pfsinitpak]
       - [0xA2490, c, ultra/io/pfssearchfile]
       - [0xA2650, c, ultra/io/pfsnumfiles]
-      - [0xA27A0, asm] # ultra:pfsfreeblocks.c
+      - [0xA27A0, c, ultra/io/pfsfreeblocks]
       - [0xA28F0, c, ultra/io/pfsreadwritefile]
       - [0xA2DF0, c, ultra/io/pfsallocatefile]
       - [0xA35A0, asm]
