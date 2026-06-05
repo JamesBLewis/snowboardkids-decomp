@@ -154,7 +154,7 @@ segments:
       - [0xA2DF0, c, ultra/io/pfsallocatefile]
       - [0xA35A0, asm]
       - [0xA3800, c, ultra/io/pfsfilestate]
-      - [0xA4100, asm] # ultra:sprintf.c
+      - [0xA4100, c, ultra/libc/sprintf]
       - [0xA4180, asm]
       - [0xA41C0, asm] # ultra:ll.c
       - [0xA4500, asm] # ultra:perspective.c
