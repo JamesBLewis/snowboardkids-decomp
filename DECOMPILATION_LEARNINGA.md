@@ -50,6 +50,10 @@ Simple audio library functions like `alSynAddPlayer` that only use public API ty
 
 Audio functions that access internal types (`ALParam`, `PVoice`, `ALFilter`, `__allocParam`) need the `synthInternals.h` internal header. Create a local copy at `include/synthInternals.h` with the needed type definitions (ALParam, ALFilter, PVoice, filter enum values, `__allocParam` declaration). For `PVoice`, use a char padding array for unused fields between `channelKnob` (offset 0xC) and `offset` (offset 0xD8) since the full struct depends on many sub-types (ALLoadFilter, ALResampler, ALEnvMixer).
 
+## ALStartParam Type for Voice Start Functions
+
+The `alSynStartVoice` function uses the internal `ALStartParam` struct (defined in upstream `synthInternals.h`) which has: `next` (ALParam*), `delta` (s32), `type` (s16), `unity` (s16), `wave` (ALWaveTable*). Add this typedef to the project's `include/synthInternals.h` alongside the existing `ALParam` and `PVoice` types. The upstream source matches directly at the default optimization level without modification.
+
 ## Verifying Symbol ROM Addresses
 
 When converting `0x700...` splat placeholder symbols to real `0x800...` VRAM addresses, verify the actual ROM address by searching the asm files for the function label. The `0x700...` value uses `0x70000000 + presumed_ROM`, but the presumed ROM may be wrong. For example, `__allocParam` was listed as `0x700A5BA0` (implying ROM 0xA5BA0) but actually lives at ROM 0xA67A0 inside the synthesizer.c segment (VRAM 0x800A5BA0). The asm file `asm/A6690.s` showed `func_800A5BA0` at ROM `A67A0`, confirming the correct address.

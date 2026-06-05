@@ -178,7 +178,7 @@ segments:
       - [0xA5B80, c, ultra/audio/synaddplayer]
       - [0xA5BD0, asm]
       - [0xA5E00, c, ultra/audio/synstopvoice]
-      - [0xA5E80, asm] # ultra:alSynStartVoice.c
+      - [0xA5E80, c, ultra/audio/synstartvoice]
       - [0xA5F10, asm] # ultra:synsetfxmix.c
       - [0xA5FB0, asm] # ultra:synsetvol.c
       - [0xA6050, asm] # ultra:synsetpan.c

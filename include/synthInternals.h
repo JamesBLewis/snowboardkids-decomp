@@ -65,6 +65,14 @@ typedef struct PVoice_s {
     s32                  offset;
 } PVoice;
 
+typedef struct {
+    struct ALParam_s    *next;
+    s32                 delta;
+    s16                 type;
+    s16                 unity;
+    ALWaveTable         *wave;
+} ALStartParam;
+
 ALParam *__allocParam(void);
 
 #endif
