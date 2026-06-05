@@ -169,7 +169,7 @@ segments:
       - [0xA4FE0, c, ultra/io/visetspecial]
       - [0xA51A0, asm] # ultra:vimgr.c
       - [0xA5500, c, ultra/io/visetmode]
-      - [0xA5570, asm] # ultra:visetevent.c
+      - [0xA5570, c, ultra/io/visetevent]
       - [0xA55E0, asm] # ultra:writebackdcache.s
       - [0xA5610, asm] # ultra:sptask.c
       - [0xA58D0, asm] # ultra:sptaskyield.c
