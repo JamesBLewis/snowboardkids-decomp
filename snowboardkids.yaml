@@ -164,7 +164,7 @@ segments:
       - [0xA4C70, asm]
       - [0xA4DB0, c, ultra/io/viblack]
       - [0xA4E20, asm]
-      - [0xA4ED0, asm] # ultra:pidma.c
+      - [0xA4ED0, c, ultra/io/pidma]
       - [0xA4FE0, asm] # ultra:visetspecial.c
       - [0xA51A0, asm] # ultra:vimgr.c
       - [0xA5500, asm] # ultra:visetmode.c
