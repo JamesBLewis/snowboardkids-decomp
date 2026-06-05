@@ -72,8 +72,9 @@ IDO_CC = $(PYTHON) $(ASM_PROC) $(CC) -- $(AS) $(ASFLAGS) --
 ASFLAGS      = -G 0 -I include -mips3 -mabi=32
 C_DEFINES    = -DLANGUAGE_C -D_LANGUAGE_C -D_MIPS_SZLONG=32 -DNDEBUG \
                -DCOMPILING_LIBULTRA -DBUILD_VERSION=VERSION_I
+C_MIPS       = -mips2
 C_OPT        = -O2
-CFLAGS       = -c -mips2 -G 0 -non_shared -fullwarn -Xcpluscomm \
+CFLAGS       = -c $(C_MIPS) -G 0 -non_shared -fullwarn -Xcpluscomm \
                -nostdinc -Wab,-r4300_mul -woff 649,838,712,516 \
                -Iinclude $(C_DEFINES)
 OBJCOPYFLAGS = -O binary
@@ -82,6 +83,9 @@ RM_MDEBUG    = $(OBJCOPY) --remove-section .mdebug $@
 $(BUILD_DIR)/src/ultra/io/%.o: C_OPT = -O1
 $(BUILD_DIR)/src/ultra/os/%.o: C_OPT = -O1
 $(BUILD_DIR)/src/ultra/gu/%.o: C_OPT = -O1
+
+$(BUILD_DIR)/src/ultra/libc/ll.o: C_OPT = -O1
+$(BUILD_DIR)/src/ultra/libc/ll.o: C_MIPS = -mips3 -32
 
 ULTRALIB_DIR := ../ultralib
 $(BUILD_DIR)/src/ultra/libc/ll.o: $(ULTRALIB_DIR)/build/I/libultra_rom/src/libc/ll.o
@@ -141,6 +145,14 @@ $(BUILD_DIR)/%.o: %.c
 	@mkdir -p $(dir $@)
 	$(PRINTF) "[$(GREEN)   c    $(NO_COL)]  $<\n"
 	$(V)$(IDO_CC) $(CFLAGS) $(C_OPT) -o $@ $<
+	$(V)$(RM_MDEBUG)
+
+# Patch ll.o for modern binutils, matching the upstream libultra build.
+$(BUILD_DIR)/src/ultra/libc/ll.o: src/ultra/libc/ll.c
+	@mkdir -p $(dir $@)
+	$(PRINTF) "[$(GREEN)   c    $(NO_COL)]  $<\n"
+	$(V)$(IDO_CC) $(CFLAGS) $(C_OPT) -o $@ $<
+	$(V)$(PYTHON) $(TOOLS_DIR)/set_o32abi_bit.py $@
 	$(V)$(RM_MDEBUG)
 
 # *.bin -> *.o
