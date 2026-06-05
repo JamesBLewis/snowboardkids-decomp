@@ -26,6 +26,10 @@ Symbols in `symbol_addrs.txt` with `0x700...` addresses are splat placeholders t
 
 For straightforward ultra functions like `osViSetMode` that don't use _DEBUG code, have no local data, and just call `__osDisableInt`/`__osRestoreInt` around struct field assignments, the upstream ultralib source often matches directly at `-O1` without modification. Always check if the compiled object emits only `.text` (no `.data`/`.rodata`) before looking for data segments to match.
 
+## Handwritten Assembly (.s) Ultra Functions
+
+For libultra functions that are handwritten assembly (e.g., `osWritebackDCacheAll`, `osWritebackDCache`, `bzero`), use the `hasm` segment type in `snowboardkids.yaml` instead of `asm`. The `hasm` type tells splat the code is handwritten and should not be split into individual functions. The YAML comment may be wrong about which function is actually at a given address — verify with the disassembly and `symbol_addrs.txt` before matching (e.g., `writebackdcache.s` contains `osWritebackDCache` while `writebackdcacheall.s` contains `osWritebackDCacheAll`, which are at different ROM addresses).
+
 ## Duplicate Symbol Names at Same Address
 
 Some symbols may share the same VRAM address (e.g., `__osSiRawReadIo` and `__osSpRawReadIo` at `0x800AA420`). These are likely different names for the same function. Remove the incorrect/unused name to avoid duplicate symbol errors. Check which name is correct based on the calling context (SI vs SP address space).
