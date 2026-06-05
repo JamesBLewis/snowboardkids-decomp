@@ -33,3 +33,7 @@ For libultra functions that are handwritten assembly (e.g., `osWritebackDCacheAl
 ## Duplicate Symbol Names at Same Address
 
 Some symbols may share the same VRAM address (e.g., `__osSiRawReadIo` and `__osSpRawReadIo` at `0x800AA420`). These are likely different names for the same function. Remove the incorrect/unused name to avoid duplicate symbol errors. Check which name is correct based on the calling context (SI vs SP address space).
+
+## Combining Small Adjacent Ultra Functions
+
+When a YAML `asm` segment contains functions from multiple ultra source files (e.g., `sptaskyield.c` adjacent to `sptaskyielded.c`, `osViSwapBuffer`, etc.), split the segment at the boundary of the target file's functions. Small related functions like `osSpTaskYield` (5 instructions) and `osSpTaskYielded` (from a separate upstream file) can be combined into a single C source file since they share the same headers and are trivially small. The remaining unmatched functions become a separate `asm` segment at the split address.

@@ -172,7 +172,8 @@ segments:
       - [0xA5570, c, ultra/io/visetevent]
       - [0xA55E0, hasm, ultra/os/writebackdcacheall]
       - [0xA5610, c, ultra/io/sptask]
-      - [0xA58D0, asm] # ultra:sptaskyield.c
+      - [0xA58D0, c, ultra/io/sptaskyield]
+      - [0xA5970, asm]
       - [0xA5B20, asm]
       - [0xA5B80, asm] # ultra:synaddplayer.c
       - [0xA5E00, asm] # ultra:synstopvoice.c
