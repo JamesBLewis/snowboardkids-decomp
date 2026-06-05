@@ -45,3 +45,11 @@ While most ultra functions match at `-O1`, audio library functions (under `src/u
 ## Minimal Headers for Simple Audio Functions
 
 Simple audio library functions like `alSynAddPlayer` that only use public API types (`ALSynth`, `ALPlayer`) and OS primitives (`osSetIntMask`) don't need the internal `synthInternals.h` header. Including `<PR/os.h>` and `<PR/libaudio.h>` is sufficient.
+
+## synthInternals.h for Internal Audio Functions
+
+Audio functions that access internal types (`ALParam`, `PVoice`, `ALFilter`, `__allocParam`) need the `synthInternals.h` internal header. Create a local copy at `include/synthInternals.h` with the needed type definitions (ALParam, ALFilter, PVoice, filter enum values, `__allocParam` declaration). For `PVoice`, use a char padding array for unused fields between `channelKnob` (offset 0xC) and `offset` (offset 0xD8) since the full struct depends on many sub-types (ALLoadFilter, ALResampler, ALEnvMixer).
+
+## Verifying Symbol ROM Addresses
+
+When converting `0x700...` splat placeholder symbols to real `0x800...` VRAM addresses, verify the actual ROM address by searching the asm files for the function label. The `0x700...` value uses `0x70000000 + presumed_ROM`, but the presumed ROM may be wrong. For example, `__allocParam` was listed as `0x700A5BA0` (implying ROM 0xA5BA0) but actually lives at ROM 0xA67A0 inside the synthesizer.c segment (VRAM 0x800A5BA0). The asm file `asm/A6690.s` showed `func_800A5BA0` at ROM `A67A0`, confirming the correct address.
