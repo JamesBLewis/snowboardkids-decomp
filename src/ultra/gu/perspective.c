@@ -1,6 +1,8 @@
 #include "guint.h"
 #include <ultratypes.h>
 
+extern double perspective_rodata_0000;
+
 void guPerspectiveF(float mf[4][4], u16 *perspNorm, float fovy, float aspect, float near, float far, float scale)
 {
 	float	cot;
@@ -8,7 +10,7 @@ void guPerspectiveF(float mf[4][4], u16 *perspNorm, float fovy, float aspect, fl
 
 	guMtxIdentF(mf);
 
-	fovy *= 3.1415926 / 180.0;
+	fovy *= perspective_rodata_0000;
 	cot = cosf (fovy/2) / sinf (fovy/2);
 
 	mf[0][0] = cot / aspect;
