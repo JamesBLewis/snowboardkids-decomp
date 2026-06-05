@@ -12,6 +12,7 @@ description: Match a given segment to a libultra ROM segment. Use this when conv
 - Keep unidentified neighboring libultra functions as separate `asm` segments until each function is matched as source.
 - Source under `src/ultra` should use real libultra names, not `func_...` or `D_...` placeholders.
 - Add required callable ROM symbols to `symbol_addrs.txt` with runtime VRAM addresses, not `0x700...` splat placeholder addresses. Never add libultra function aliases to `linker_scripts/libultra_syms.ld`.
+- If a libultra source file emits `.data` or `.bss`, match those sections in `snowboardkids.yaml`; do not remove the C definitions, make them `extern`, allow multiple definitions, add linker-script aliases, or delete generated linker entries.
 
 ## Workflow
 
@@ -43,7 +44,30 @@ description: Match a given segment to a libultra ROM segment. Use this when conv
    - [0xA2650, c, ultra/io/pfsnumfiles]
    ```
 
-5. If the new source calls functions or references data already present elsewhere in the ROM, add the real ultralib symbol names to `symbol_addrs.txt`. Avoid using aliases to make the work with unlabeled symbols (those starting with D_ or func_). **Important:** symbols with `0x700...` addresses are splat placeholders and must be converted to runtime `0x800...` VRAM addresses before the linker can resolve them. A linker-script alias such as `osSendMesg = 0x800A0D30;` in `linker_scripts/libultra_syms.ld` is the wrong fix; update `symbol_addrs.txt`, the real asm/C labels, and call sites instead. Scan for any `0x700A` entries that the new source calls:
+5. If the new source object emits `.data` or `.bss`, match those sections before trying linker workarounds. First inspect the object:
+
+   ```sh
+   mips-linux-gnu-objdump -h build/src/ultra/os/initialize.o
+   mips-linux-gnu-nm -n build/src/ultra/os/initialize.o
+   ```
+
+   Then split the existing raw data/BSS ranges in `snowboardkids.yaml` so the C file owns exactly the emitted data. Keep the definitions in C when they are part of the upstream file; changing them to `extern` can alter IDO codegen even when it looks semantically equivalent.
+
+   Example for `ultra/os/initialize`, whose `.data` lives inside `B1C00.data.s` and whose `.bss` lives inside the main BSS block:
+
+   ```yaml
+   - [0xB1C00, data]
+   - [0xDFED0, .data, ultra/os/initialize]
+   - [0xDFEF0, data]
+   ...
+   - { type: bss, name: bss_chunk_a, vram: 0x800E29C0 }
+   - { type: .bss, name: ultra/os/initialize, vram: 0x8015CCD0 }
+   - { type: bss, name: bss_chunk_b, vram: 0x8015CCE0 }
+   ```
+
+   For `initialize.c`, the matched `.data` range is `0xDFED0..0xDFEF0` and contains `osClockRate`, `osViClock`, `__osShutdown`, and `__OSGlobalIntMask`. `__osFinalrom` is BSS at `0x8015CCD0..0x8015CCE0`. The raw ranges before and after remain raw segments; give split BSS chunks stable names so Splat does not collapse or mis-name them.
+
+6. If the new source calls functions or references data already present elsewhere in the ROM, add the real ultralib symbol names to `symbol_addrs.txt`. Avoid using aliases to make the work with unlabeled symbols (those starting with D_ or func_). **Important:** symbols with `0x700...` addresses are splat placeholders and must be converted to runtime `0x800...` VRAM addresses before the linker can resolve them. A linker-script alias such as `osSendMesg = 0x800A0D30;` in `linker_scripts/libultra_syms.ld` is the wrong fix; update `symbol_addrs.txt`, the real asm/C labels, and call sites instead. Scan for any `0x700A` entries that the new source calls:
 
    ```text
    __osDisableInt = 0x800A61B0; // type:func
@@ -60,19 +84,19 @@ description: Match a given segment to a libultra ROM segment. Use this when conv
 
    If the second command finds unrelated existing placeholders, do not rename them blindly. Fix only the symbols involved in the segment being matched.
 
-6. Build and verify:
+7. Build and verify:
 
    ```sh
    ./tools/build-and-verify.sh
    ```
 
-7. If verification fails, diff every function emitted by the new source before looking for linker or data issues:
+8. If verification fails, diff every function emitted by the new source before looking for linker or data issues:
 
    ```sh
    python3 tools/asm-differ/diff.py --no-pager osPfsNumFiles
    ```
 
-8. Document Learnings:
+9. Document Learnings:
 
 Update the DECOMPILATION_LEARNINGA.md file in the root of the project with any additional learnings that you gathered as part of matching this segment.
 
@@ -98,12 +122,14 @@ This project uses `BUILD_VERSION=VERSION_I`. When porting upstream ultralib sour
 
 Be mindful that you may need to adjust the start/end points of segments as well as the segment name to match it to the correct ultralib c file.
 
-## Data and Rodata matching
+## Data, Rodata, and BSS Matching
 
-Ultralib segments may contain data and/or rodata which must be similarly matched. These are likely unlabelled. You will need to find the appropriate data/rodata segment and link it back to your matched ultralib segment, e.g:
+Ultralib segments may contain data, rodata, and/or bss which must be similarly matched. These are likely unlabelled. You will need to find the appropriate data/rodata/bss segment and link it back to your matched ultralib segment, e.g:
 
 ```
+- [0xDFED0, .data, ultra/os/initialize]
 - [0xE15B0, .rodata, myUltraLibSegment]
+- { type: .bss, name: ultra/os/initialize, vram: 0x8015CCD0 }
 ```
 
 First check whether the compiled object actually emits these sections:
@@ -114,15 +140,19 @@ mips-linux-gnu-objdump -h build/src/ultra/io/pfsnumfiles.o
 
 If the object only has `.text` plus compiler metadata such as `.options` and `.reginfo`, continue matching instruction generation before adding data or rodata segments.
 
+If the object emits data/BSS that already exists in a broad raw segment, split the broad segment around the emitted range. Do not use linker scripts to alias the symbols or Makefile commands to strip sections out of the generated linker script. Keep the C definitions and let the corresponding `.data`/`.bss` YAML entries own those sections.
+
 You can use the match-data-file skill to help match  the correct segment. Note that it might not be properly annotated (yet) in snowboardkids.yaml.
 
 ## Avoid
 
 - Do not mutate linker scripts with `perl -0pi`, `perl -pe`, or similar build hacks.
+- Do not edit the Makefile to `sed` generated linker scripts or add `--allow-multiple-definition` to hide duplicate data.
 - Do not add libultra function aliases to `linker_scripts/libultra_syms.ld`; define the symbol in `symbol_addrs.txt` at its runtime `0x800...` address and rename the real labels/references.
+- Do not add libultra data aliases to `linker_scripts/libultra_syms.ld`; match the data/BSS section in `snowboardkids.yaml`.
+- Do not change real libultra data definitions to `extern` just to avoid duplicate storage; it can change IDO codegen. Match the emitted data/BSS segments instead.
 - Do not replace archive-member linker entries by text substitution.
 - Do not link `libultra_rom.a` just to extract one matched object.
 - Do not add a custom `symbol_addrs.ld`; use `symbol_addrs.txt`.
 - Do not disable `undefined_funcs_auto.txt` to keep a local libultra source dependency unresolved.
 - Do not leave `func_...` or `D_...` references in `src/ultra`.
-
