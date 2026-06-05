@@ -159,7 +159,7 @@ segments:
       - [0xA41C0, c, ultra/libc/ll]
       - [0xA4480, asm]
       - [0xA4500, c, ultra/gu/perspective]
-      - [0xA4790, asm] # ultra:stopthread.c
+      - [0xA4790, c, ultra/os/stopthread]
       - [0xA4850, asm] # ultra:initialize.c
       - [0xA4AE0, asm] # ultra:pimgr.c
       - [0xA4C70, asm]
