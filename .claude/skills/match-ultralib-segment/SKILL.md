@@ -94,6 +94,10 @@ This project uses `BUILD_VERSION=VERSION_I`. When porting upstream ultralib sour
 - No `PFS_ID_BROKEN` status flag handling.
 - The upstream source may contain calls that were not present in the actual VERSION_I build. Trust the assembly over the upstream — if a call appears in upstream but not in the target assembly, omit it.
 
+## Incorrect Segments
+
+Be mindful that you may need to adjust the start/end points of segments as well as the segment name to match it to the correct ultralib c file.
+
 ## Data and Rodata matching
 
 Ultralib segments may contain data and/or rodata which must be similarly matched. These are likely unlabelled. You will need to find the appropriate data/rodata segment and link it back to your matched ultralib segment, e.g:
@@ -109,6 +113,8 @@ mips-linux-gnu-objdump -h build/src/ultra/io/pfsnumfiles.o
 ```
 
 If the object only has `.text` plus compiler metadata such as `.options` and `.reginfo`, continue matching instruction generation before adding data or rodata segments.
+
+You can use the match-data-file skill to help match  the correct segment. Note that it might not be properly annotated (yet) in snowboardkids.yaml.
 
 ## Avoid
 
