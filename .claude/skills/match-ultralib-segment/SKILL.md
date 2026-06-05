@@ -7,11 +7,11 @@ description: Match a given segment to a libultra ROM segment. Use this when conv
 
 ## Core Rules
 
-- Match libultra by compiling local source under `src/ultra`; do not patch generated linker scripts or use archive-member rewrites.
+- Match libultra by compiling local source under `src/ultra`; do not patch linker scripts, generated linker scripts, or archive-member references.
 - Preserve the upstream libultra subdirectory when possible, for example `../ultralib/src/io/pfsnumfiles.c` becomes `src/ultra/io/pfsnumfiles.c`.
 - Keep unidentified neighboring libultra functions as separate `asm` segments until each function is matched as source.
 - Source under `src/ultra` should use real libultra names, not `func_...` or `D_...` placeholders.
-- Add required callable ROM symbols to `symbol_addrs.txt` with runtime VRAM addresses, not `0x700...` splat placeholder addresses.
+- Add required callable ROM symbols to `symbol_addrs.txt` with runtime VRAM addresses, not `0x700...` splat placeholder addresses. Never add libultra function aliases to `linker_scripts/libultra_syms.ld`.
 
 ## Workflow
 
@@ -43,13 +43,22 @@ description: Match a given segment to a libultra ROM segment. Use this when conv
    - [0xA2650, c, ultra/io/pfsnumfiles]
    ```
 
-5. If the new source calls functions or references data already present elsewhere in the ROM, add the real ultralib symbol names to `symbol_addrs.txt`. Avoid using aliases to make the work with unlabeled symbols (those starting with D_ or func_). **Important:** symbols with `0x700...` addresses are splat placeholders and must be converted to runtime `0x800...` VRAM addresses before the linker can resolve them. Scan for any `0x700A` entries that the new source calls:
+5. If the new source calls functions or references data already present elsewhere in the ROM, add the real ultralib symbol names to `symbol_addrs.txt`. Avoid using aliases to make the work with unlabeled symbols (those starting with D_ or func_). **Important:** symbols with `0x700...` addresses are splat placeholders and must be converted to runtime `0x800...` VRAM addresses before the linker can resolve them. A linker-script alias such as `osSendMesg = 0x800A0D30;` in `linker_scripts/libultra_syms.ld` is the wrong fix; update `symbol_addrs.txt`, the real asm/C labels, and call sites instead. Scan for any `0x700A` entries that the new source calls:
 
    ```text
    __osDisableInt = 0x800A61B0; // type:func
    __osRestoreInt = 0x800A61D0; // type:func
    __osContPifRam = 0x8015CA00;
    ```
+
+   Before moving on, verify that no libultra function alias was added to the linker scripts, and that the matched/called functions use real names instead of address-derived placeholders:
+
+   ```sh
+   rg -n "= 0x800A" linker_scripts
+   rg -n "func_800A[0-9A-Fa-f]+" symbol_addrs.txt src asm
+   ```
+
+   If the second command finds unrelated existing placeholders, do not rename them blindly. Fix only the symbols involved in the segment being matched.
 
 6. Build and verify:
 
@@ -62,6 +71,10 @@ description: Match a given segment to a libultra ROM segment. Use this when conv
    ```sh
    python3 tools/asm-differ/diff.py --no-pager osPfsNumFiles
    ```
+
+8. Document Learnings:
+
+Update the DECOMPILATION_LEARNINGA.md file in the root of the project with any additional learnings that you gathered as part of matching this segment.
 
 ## Build Flags
 
@@ -100,8 +113,10 @@ If the object only has `.text` plus compiler metadata such as `.options` and `.r
 ## Avoid
 
 - Do not mutate linker scripts with `perl -0pi`, `perl -pe`, or similar build hacks.
+- Do not add libultra function aliases to `linker_scripts/libultra_syms.ld`; define the symbol in `symbol_addrs.txt` at its runtime `0x800...` address and rename the real labels/references.
 - Do not replace archive-member linker entries by text substitution.
 - Do not link `libultra_rom.a` just to extract one matched object.
 - Do not add a custom `symbol_addrs.ld`; use `symbol_addrs.txt`.
 - Do not disable `undefined_funcs_auto.txt` to keep a local libultra source dependency unresolved.
 - Do not leave `func_...` or `D_...` references in `src/ultra`.
+
