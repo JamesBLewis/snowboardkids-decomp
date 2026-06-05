@@ -156,7 +156,8 @@ segments:
       - [0xA3800, c, ultra/io/pfsfilestate]
       - [0xA4100, c, ultra/libc/sprintf]
       - [0xA4180, asm]
-      - [0xA41C0, asm] # ultra:ll.c
+      - [0xA41C0, c, ultra/libc/ll]
+      - [0xA4480, asm]
       - [0xA4500, asm] # ultra:perspective.c
       - [0xA4790, asm]
       - [0xA4AE0, asm] # ultra:stopthread.c

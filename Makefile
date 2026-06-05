@@ -82,6 +82,12 @@ RM_MDEBUG    = $(OBJCOPY) --remove-section .mdebug $@
 $(BUILD_DIR)/src/ultra/io/%.o: C_OPT = -O1
 $(BUILD_DIR)/src/ultra/os/%.o: C_OPT = -O1
 
+ULTRALIB_DIR := ../ultralib
+$(BUILD_DIR)/src/ultra/libc/ll.o: $(ULTRALIB_DIR)/build/I/libultra_rom/src/libc/ll.o
+	@mkdir -p $(dir $@)
+	$(PRINTF) "$(CYAN)CP      $(NO_COL)%s\n" $<
+	$(V)cp $< $@
+
 LD_SCRIPT      = $(BASENAME).ld
 LINKER_SCRIPTS = linker_scripts/hardware_regs.ld linker_scripts/libultra_syms.ld
 LDFLAGS        = -T $(LD_SCRIPT) -Map $(TARGET).map \
