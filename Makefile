@@ -95,7 +95,8 @@ LDFLAGS        = -T $(LD_SCRIPT) -Map $(TARGET).map \
                  -T undefined_funcs_auto.txt \
                  -T undefined_syms_auto.txt \
                  $(foreach ld,$(LINKER_SCRIPTS),-T $(ld)) \
-                 --no-check-sections
+                 --no-check-sections \
+                 --allow-multiple-definition
 
 # Files
 
@@ -126,6 +127,10 @@ dirs:
 extract: check
 	$(PRINTF) "[$(CYAN) splat  $(NO_COL)]  Extracting $(BASENAME).yaml\n"
 	$(V)$(SPLAT) $(BASENAME).yaml
+	@# initialize.o defines data/bss locally for correct IDO codegen but
+	@# the real data comes from the B1C00 data segment and libultra_syms.ld.
+	$(V)sed -i '/build\/src\/ultra\/os\/initialize\.o(\.data)/d' $(LD_SCRIPT)
+	$(V)sed -i '/build\/src\/ultra\/os\/initialize\.o(\.bss)/d' $(LD_SCRIPT)
 
 #################
 ## COMPILATION ##
