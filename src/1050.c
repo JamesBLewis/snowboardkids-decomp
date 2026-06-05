@@ -1,7 +1,7 @@
 #include "common.h"
 
 void osRecvMesg(void *, void *, s32);
-void func_800A0D30(void *, s32, s32, u16);
+void osSendMesg(void *, s32, s32, u16);
 extern s32 D_800E4B78;
 extern s32 D_800E4BB0;
 
@@ -28,7 +28,7 @@ void func_80000DB4(u16 arg0) {
 
     sp1C = 0;
 
-    func_800A0D30(&D_800E4B78, arg0 + 0x30, 1, arg0);
+    osSendMesg(&D_800E4B78, arg0 + 0x30, 1, arg0);
     osRecvMesg(&D_800E4BB0, &sp1C, 1);
 }
 
