@@ -149,7 +149,7 @@ segments:
       - [0xA2220, c, ultra/io/pfsinitpak]
       - [0xA2490, c, ultra/io/pfssearchfile]
       - [0xA2650, c, ultra/io/pfsnumfiles]
-      - [0xA27A0, asm]
+      - [0xA27A0, asm] # ultra:pfsfreeblocks.c
       - [0xA28F0, c, ultra/io/pfsreadwritefile]
       - [0xA2DF0, c, ultra/io/pfsallocatefile]
       - [0xA35A0, asm]
@@ -159,8 +159,9 @@ segments:
       - [0xA41C0, c, ultra/libc/ll]
       - [0xA4480, asm]
       - [0xA4500, c, ultra/gu/perspective]
-      - [0xA4790, asm]
-      - [0xA4AE0, asm] # ultra:stopthread.c
+      - [0xA4790, asm] # ultra:stopthread.c
+      - [0xA4850, asm] # ultra:initialize.c
+      - [0xA4AE0, asm] # ultra:pimgr.c
       - [0xA4C70, asm]
       - [0xA4DB0, c, ultra/io/viblack]
       - [0xA4E20, asm]
@@ -183,7 +184,7 @@ segments:
       - [0xA6170, asm] # ultra:sinf.c
       - [0xA65D0, asm] # ultra:aisetnextbuf.c
       - [0xA6680, asm] # ultra:aigetlen.c
-      - [0xA6690, asm]
+      - [0xA6690, asm] # ultra:synthesizer.c (guess)
       - [0xA6DB0, asm] # ultra:interrupt.s
       - [0xA6DF0, asm] # ultra:gettime.c
       - [0xA6E80, asm] # ultra:settimer.c
@@ -191,11 +192,12 @@ segments:
       - [0xA7010, asm] # ultra:siacs.c
       - [0xA79E0, asm] # ultra:pfsisplug.c
       - [0xA7D50, asm] # ultra:crc.c
-      - [0xA85E0, asm]
+      - [0xA85E0, asm] # ultra:pfsgetstatus.c (guess)
       - [0xA86F0, asm] # ultra:contpfs.c
-      - [0xA9450, asm]
-      - [0xAAB70, asm]
-      - [0xAAC10, asm]
+      - [0xA9450, asm] # ultra:pfschecker.c (guess)
+      - [0xAA520, asm] # ultra:xprintf.c (guess)
+      - [0xAAB70, asm] # ultra:string.c
+      - [0xAAC10, asm] # ultra:mtxutil.c
       - [0xAAE80, asm] # ultra:cosf.c
       - [0xAAFF0, asm]
       - [0xAB010, asm] # ultra:sprawwrite.c
@@ -209,7 +211,7 @@ segments:
       - [0xAB570, asm] # ultra:pirawdma.c
       - [0xAB880, asm] # ultra:devmgr.c
       - [0xABE50, asm] # libmus:player_api.c
-      - [0xABFD0, asm]
+      - [0xABFD0, asm] # libmus:timerintr.c
       - [0xAC3D0, asm] # ultra:getactivequeue.c
       - [0xAC3E0, asm]
       - [0xAC740, asm]
