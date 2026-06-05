@@ -37,3 +37,11 @@ Some symbols may share the same VRAM address (e.g., `__osSiRawReadIo` and `__osS
 ## Combining Small Adjacent Ultra Functions
 
 When a YAML `asm` segment contains functions from multiple ultra source files (e.g., `sptaskyield.c` adjacent to `sptaskyielded.c`, `osViSwapBuffer`, etc.), split the segment at the boundary of the target file's functions. Small related functions like `osSpTaskYield` (5 instructions) and `osSpTaskYielded` (from a separate upstream file) can be combined into a single C source file since they share the same headers and are trivially small. The remaining unmatched functions become a separate `asm` segment at the split address.
+
+## Audio Library Functions May Need -O2
+
+While most ultra functions match at `-O1`, audio library functions (under `src/ultra/audio/`) may require `-O2` to match the target assembly. The tighter register allocation and delay slot usage in the target (e.g., saving function arguments in registers rather than spilling to stack) are characteristic of `-O2` optimization. Test both `-O1` and `-O2` when matching audio functions.
+
+## Minimal Headers for Simple Audio Functions
+
+Simple audio library functions like `alSynAddPlayer` that only use public API types (`ALSynth`, `ALPlayer`) and OS primitives (`osSetIntMask`) don't need the internal `synthInternals.h` header. Including `<PR/os.h>` and `<PR/libaudio.h>` is sufficient.
