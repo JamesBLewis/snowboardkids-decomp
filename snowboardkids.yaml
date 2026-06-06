@@ -192,7 +192,8 @@ segments:
       - [0xA6DF0, c, ultra/os/gettime]
       - [0xA6E80, c, ultra/os/settimer]
       - [0xA6F60, c, ultra/io/sirawdma]
-      - [0xA7010, asm] # ultra:siacs.c
+      - [0xA7010, c, ultra/io/siacs]
+      - [0xA70D0, asm]
       - [0xA79E0, asm] # ultra:pfsisplug.c
       - [0xA7D50, asm] # ultra:crc.c
       - [0xA85E0, asm] # ultra:pfsgetstatus.c (guess)
@@ -254,6 +255,8 @@ segments:
       - [0xDFF20, data]
       - [0xE0C70, .data, ultra/io/aisetnextbuf]
       - [0xE0C80, data]
+      - [0xE0CA0, .data, ultra/io/siacs]
+      - [0xE0CB0, data]
       - [0xE11A0, .rodata, 1050]
       - [0xE1500, rodata]
       - [0xE1580, rodata]
@@ -318,6 +321,8 @@ segments:
       - { type: .bss, name: ultra/os/initialize, vram: 0x8015CCD0 }
       - { type: .bss, name: ultra/io/pimgr, vram: 0x8015CCE0 }
       - { type: bss, name: bss_chunk_c, vram: 0x8015DEB0 }
+      - { type: .bss, name: ultra/io/siacs, vram: 0x8015F110 }
+      - { type: bss, name: bss_chunk_d, vram: 0x8015F130 }
 
   - type: bin
     start: 0xE35C0

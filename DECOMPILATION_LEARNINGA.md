@@ -69,3 +69,16 @@ For straightforward libultra functions like `osSetTimer` that follow the VERSION
 ## Verifying BSS Symbol Addresses Against Assembly
 
 When matching functions that reference BSS globals, verify the symbol addresses in `symbol_addrs.txt` against the actual assembly access patterns. The assembly may access a different address than what `symbol_addrs.txt` lists — the disassembler can misidentify which BSS chunk corresponds to which symbol. For example, `__osCurrentTime` was listed at `0x8015E564` (a 0xAFC-byte chunk that was actually a vimgr BSS allocation), but the assembly accessed it at `0x8015F2B0` (adjacent to `__osBaseCounter` at `0x8015F2B8`). Fixing the address in `symbol_addrs.txt` with the correct size annotation (`// size:0x8`) causes the BSS file to regenerate correctly. The `jal` target addresses in assembly use VRAM addresses (`0x800ABB40` not `0x700ABB40`), so splat placeholders must also be converted.
+
+## siacs.c: Zero-Initialized Globals Go to .data with IDO
+
+With IDO at `-O1`, `u32 var = 0` generates a `.data` section entry (not `.bss`). When matching ultra files with zero-initialized globals, the compiled object will emit both `.data` and `.bss` sections. These need to be split out of the existing raw data/BSS segments in `snowboardkids.yaml`. The key steps:
+
+1. Compile the C file and check sections with `mips-linux-gnu-objdump -h` and `mips-linux-gnu-nm -n`.
+2. Find the data/BSS symbols in the existing raw asm files (`asm/data/E0C80.data.s`, `asm/data/bss_chunk_c.bss.s`).
+3. Split the YAML segments around the emitted ranges (e.g., split `[0xE0C80, data]` into three: before, `.data` for the C file, after).
+4. Run `./tools/build-and-verify.sh` — Splat regenerates the asm files based on the new YAML. No manual asm file editing needed.
+
+## siacs.c: Including PRinternal/macros.h for ALIGNED
+
+The `ALIGNED(x)` macro (defined in `PRinternal/macros.h`) expands to `__attribute__((aligned(x)))`, which is redefined as a no-op for non-GCC compilers (IDO) via `#define __attribute__(x)`. Ultra source files using `ALIGNED` must include `PRinternal/macros.h` or IDO will fail with a syntax error at the `ALIGNED` token.
