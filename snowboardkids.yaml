@@ -189,7 +189,7 @@ segments:
       - [0xA6680, c, ultra/io/aigetlen]
       - [0xA6690, asm] # ultra:synthesizer.c (guess)
       - [0xA6DB0, hasm, ultra/os/interrupt]
-      - [0xA6DF0, asm] # ultra:gettime.c
+      - [0xA6DF0, c, ultra/os/gettime]
       - [0xA6E80, asm] # ultra:settimer.c
       - [0xA6F60, asm] # ultra:sirawdma.c
       - [0xA7010, asm] # ultra:siacs.c

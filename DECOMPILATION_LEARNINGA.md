@@ -61,3 +61,7 @@ Some ultra source files are pure assembly (`.s`), not C. For these, create a cle
 ## Verifying Symbol ROM Addresses
 
 When converting `0x700...` splat placeholder symbols to real `0x800...` VRAM addresses, verify the actual ROM address by searching the asm files for the function label. The `0x700...` value uses `0x70000000 + presumed_ROM`, but the presumed ROM may be wrong. For example, `__allocParam` was listed as `0x700A5BA0` (implying ROM 0xA5BA0) but actually lives at ROM 0xA67A0 inside the synthesizer.c segment (VRAM 0x800A5BA0). The asm file `asm/A6690.s` showed `func_800A5BA0` at ROM `A67A0`, confirming the correct address.
+
+## Verifying BSS Symbol Addresses Against Assembly
+
+When matching functions that reference BSS globals, verify the symbol addresses in `symbol_addrs.txt` against the actual assembly access patterns. The assembly may access a different address than what `symbol_addrs.txt` lists — the disassembler can misidentify which BSS chunk corresponds to which symbol. For example, `__osCurrentTime` was listed at `0x8015E564` (a 0xAFC-byte chunk that was actually a vimgr BSS allocation), but the assembly accessed it at `0x8015F2B0` (adjacent to `__osBaseCounter` at `0x8015F2B8`). Fixing the address in `symbol_addrs.txt` with the correct size annotation (`// size:0x8`) causes the BSS file to regenerate correctly. The `jal` target addresses in assembly use VRAM addresses (`0x800ABB40` not `0x700ABB40`), so splat placeholders must also be converted.
