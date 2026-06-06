@@ -32,3 +32,10 @@ Record project-specific compiler behavior, matching patterns, and verified struc
 - **Segment splitting needed when C text is smaller than the original asm range.** The original `[0xA6170, asm]` segment spanned 0xA6170-0xA65D0 (0x460 bytes) covering sinf plus osAiSetFrequency and other functions. The compiled sinf.o text is only 0x1C0 bytes. A new asm segment at 0xA6330 is needed to cover the remaining functions.
 - **Rodata segment must be split at the correct ROM offset, not based on symbol VRAM addresses.** The sinf rodata symbols have VRAM 0x800E1B80 but the actual ROM data is at 0xE2780 (within the `[0xE2700, rodata]` YAML segment). Use the linker map file from a baseline build to find the correct rodata segment and offset.
 - **`#pragma weak` aliases work with IDO.** The `#pragma weak fsin = __sinf` and `#pragma weak sinf = __sinf` directives produce correct weak symbols that the linker resolves, matching the original symbol layout (sinf and __sinf at the same address).
+
+## ultra:aisetnextbuf.c (0xA65D0)
+
+- **VERSION_I uses `& 0x3FFF == 0x2000` check, not `& 0x1FFF == 0`.** The upstream source checks `(((u32)bufPtr + size) & 0x1fff) == 0` but the VERSION_I ROM checks `(((u32)bufPtr + size) & 0x3fff) == 0x2000`. These are not equivalent — the VERSION_I check is more restrictive, requiring bit 13 to be set.
+- **VERSION_I places `__osAiDeviceBusy()` AFTER the hardware bug workaround.** The upstream has the busy check before the workaround for `BUILD_VERSION >= VERSION_J`. VERSION_I has it after, which the code already handles via `#if BUILD_VERSION < VERSION_J`.
+- **Static `u8` initialized to 0 emits `.data` (not `.bss`) with IDO.** `static u8 hdwrBugFlag = FALSE;` produces a 16-byte `.data` entry (1 byte + 15 bytes padding), not `.bss`.
+- **Data segment split at ROM 0xE0C70.** The `hdwrBugFlag` static lives at VRAM 0x800E0070 (ROM 0xE0C70). The `[0xDFF20, data]` segment was split into three: `[0xDFF20, data]`, `[0xE0C70, .data, ultra/io/aisetnextbuf]`, `[0xE0C80, data]`.
