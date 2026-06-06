@@ -25,3 +25,10 @@ Record project-specific compiler behavior, matching patterns, and verified struc
 
 - **Matches directly from upstream at -O1.** The upstream `synsetvol.c` compiles to matching assembly without modification, using the same include pattern as `synsetfxmix.c` (`<PR/libaudio.h>` + `"synthInternals.h"`).
 - **`_timeToSamples` needs VRAM address in symbol_addrs.txt.** The splat placeholder `0x700A5A98` must be corrected to the real VRAM address `0x800A5A98`. The VRAM address can be verified from the diff tool's `jal` target in the original ROM assembly. Added declaration to `include/synthInternals.h`.
+
+## ultra:sinf.c (0xA6170)
+
+- **Requires -O2, not -O1.** The ultralib Makefile uses `-O3` for `src/gu/` files in VERSION_I, but IDO recomp only supports up to `-O2`. Fortunately `-O2` produces identical code to `-O3` for this function. At `-O1`, IDO allocates a 56-byte stack frame and uses different register allocation, producing 48 bytes of extra code that doesn't match.
+- **Segment splitting needed when C text is smaller than the original asm range.** The original `[0xA6170, asm]` segment spanned 0xA6170-0xA65D0 (0x460 bytes) covering sinf plus osAiSetFrequency and other functions. The compiled sinf.o text is only 0x1C0 bytes. A new asm segment at 0xA6330 is needed to cover the remaining functions.
+- **Rodata segment must be split at the correct ROM offset, not based on symbol VRAM addresses.** The sinf rodata symbols have VRAM 0x800E1B80 but the actual ROM data is at 0xE2780 (within the `[0xE2700, rodata]` YAML segment). Use the linker map file from a baseline build to find the correct rodata segment and offset.
+- **`#pragma weak` aliases work with IDO.** The `#pragma weak fsin = __sinf` and `#pragma weak sinf = __sinf` directives produce correct weak symbols that the linker resolves, matching the original symbol layout (sinf and __sinf at the same address).
