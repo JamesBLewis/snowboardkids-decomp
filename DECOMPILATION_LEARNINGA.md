@@ -54,6 +54,10 @@ Audio functions that access internal types (`ALParam`, `PVoice`, `ALFilter`, `__
 
 The `alSynStartVoice` function uses the internal `ALStartParam` struct (defined in upstream `synthInternals.h`) which has: `next` (ALParam*), `delta` (s32), `type` (s16), `unity` (s16), `wave` (ALWaveTable*). Add this typedef to the project's `include/synthInternals.h` alongside the existing `ALParam` and `PVoice` types. The upstream source matches directly at the default optimization level without modification.
 
+## Matching Assembly-Only Ultra Functions (interrupt.s)
+
+Some ultra source files are pure assembly (`.s`), not C. For these, create a clean handwritten assembly file under `asm/ultra/os/` using the project's `macro.inc` conventions (`glabel`/`endlabel`, COP0 register aliases like `Status` for `$12`), and use the `hasm` segment type in `snowboardkids.yaml`. For `interrupt.s`, the upstream has a `BUILD_VERSION >= VERSION_J` branch — this project uses VERSION_I, so the simpler `#else` path applies (no `__OSGlobalIntMask` interaction). The `macro.inc` file provides COP0 register aliases that can be used directly instead of upstream's `C0_SR`/`SR_IE` macros.
+
 ## Verifying Symbol ROM Addresses
 
 When converting `0x700...` splat placeholder symbols to real `0x800...` VRAM addresses, verify the actual ROM address by searching the asm files for the function label. The `0x700...` value uses `0x70000000 + presumed_ROM`, but the presumed ROM may be wrong. For example, `__allocParam` was listed as `0x700A5BA0` (implying ROM 0xA5BA0) but actually lives at ROM 0xA67A0 inside the synthesizer.c segment (VRAM 0x800A5BA0). The asm file `asm/A6690.s` showed `func_800A5BA0` at ROM `A67A0`, confirming the correct address.
