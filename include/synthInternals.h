@@ -74,5 +74,6 @@ typedef struct {
 } ALStartParam;
 
 ALParam *__allocParam(void);
+s32 _timeToSamples(ALSynth *synth, s32 micros);
 
 #endif

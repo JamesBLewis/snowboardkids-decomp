@@ -20,3 +20,8 @@ Record project-specific compiler behavior, matching patterns, and verified struc
 - **`piint.h` has VERSION_I macro mappings.** `__osPiRawStartDma` maps to `osPiRawStartDma` and `__osEPiRawStartDma` maps to `osEPiRawStartDma` via preprocessor macros in `PRinternal/piint.h` when `BUILD_VERSION < VERSION_J`. The C code uses the double-underscore names but the linker resolves the single-underscore versions.
 - **VERSION_I pimgr uses `CartRomHandle`/`LeoDiskHandle`**, not `__Dom1SpeedParam`/`__Dom2SpeedParam`. The `__osCurrentHandle` array is initialized with `extern` handle pointers.
 - **No `_FINALROM` / no `ramromMain`.** The ROM build excludes the `#ifndef _FINALROM` debug thread code. The matched function only contains `osCreatePiManager`.
+
+## ultra:synsetvol.c (0xA5FB0)
+
+- **Matches directly from upstream at -O1.** The upstream `synsetvol.c` compiles to matching assembly without modification, using the same include pattern as `synsetfxmix.c` (`<PR/libaudio.h>` + `"synthInternals.h"`).
+- **`_timeToSamples` needs VRAM address in symbol_addrs.txt.** The splat placeholder `0x700A5A98` must be corrected to the real VRAM address `0x800A5A98`. The VRAM address can be verified from the diff tool's `jal` target in the original ROM assembly. Added declaration to `include/synthInternals.h`.
