@@ -186,7 +186,7 @@ segments:
       - [0xA6170, c, ultra/gu/sinf]
       - [0xA6330, asm]
       - [0xA65D0, c, ultra/io/aisetnextbuf]
-      - [0xA6680, asm] # ultra:aigetlen.c
+      - [0xA6680, c, ultra/io/aigetlen]
       - [0xA6690, asm] # ultra:synthesizer.c (guess)
       - [0xA6DB0, asm] # ultra:interrupt.s
       - [0xA6DF0, asm] # ultra:gettime.c
