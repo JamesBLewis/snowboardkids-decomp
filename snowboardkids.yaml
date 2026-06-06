@@ -182,7 +182,7 @@ segments:
       - [0xA5F10, c, ultra/audio/synsetfxmix]
       - [0xA5FB0, c, ultra/audio/synsetvol]
       - [0xA6050, c, ultra/audio/synsetpan]
-      - [0xA60E0, asm] # ultra:synsetpitch.c
+      - [0xA60E0, c, ultra/audio/synsetpitch]
       - [0xA6170, asm] # ultra:sinf.c
       - [0xA65D0, asm] # ultra:aisetnextbuf.c
       - [0xA6680, asm] # ultra:aigetlen.c
