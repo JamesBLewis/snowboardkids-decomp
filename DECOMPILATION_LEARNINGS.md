@@ -11,3 +11,12 @@ Record project-specific compiler behavior, matching patterns, and verified struc
 - **Symbol renames propagate through extraction.** Changing names in `symbol_addrs.txt` (e.g., `func_800A5950` → `osVirtualToPhysical`) causes splat to regenerate asm files with the new labels during `make extract`. Manual asm file edits are overwritten.
 - **`_bcopy` (not `bcopy`)** is the actual linker symbol for the memory copy function. The header declares `bcopy` but the linked symbol is `_bcopy`.
 - **`PRinternal/osint.h`** provides the prototype for `__osSpDeviceBusy` and other internal functions, eliminating "anonymous function" warnings.
+
+## ultra:pimgr.c (0xA4AE0)
+
+- **Defining data locally vs extern changes IDO codegen.** With `OSDevMgr __osPiDevMgr = { 0 }` defined locally, IDO keeps the base register (`at`) alive across multiple struct field stores, producing compact code. With `extern OSDevMgr __osPiDevMgr`, the compiler reloads `at` before each store, adding 4 extra instructions and breaking the match.
+- **Struct field offsets can't be exported as separate C symbols.** When matching a data segment that contains a struct, other asm files may reference individual field offsets (e.g., `player_bss_003C` at `__osPiDevMgr + 8`). These can't be defined in C since the struct is a single variable. The field symbol needs to be provided via `linker_scripts/libultra_syms.ld` at its absolute VRAM address.
+- **Splitting data segments reveals hidden symbol dependencies.** The raw data object previously defined all label symbols for every offset. Splitting it into a matched `.data` segment means only the C-defined symbols survive. Audit the nm output of the old raw data object for symbols referenced by other asm files.
+- **`piint.h` has VERSION_I macro mappings.** `__osPiRawStartDma` maps to `osPiRawStartDma` and `__osEPiRawStartDma` maps to `osEPiRawStartDma` via preprocessor macros in `PRinternal/piint.h` when `BUILD_VERSION < VERSION_J`. The C code uses the double-underscore names but the linker resolves the single-underscore versions.
+- **VERSION_I pimgr uses `CartRomHandle`/`LeoDiskHandle`**, not `__Dom1SpeedParam`/`__Dom2SpeedParam`. The `__osCurrentHandle` array is initialized with `extern` handle pointers.
+- **No `_FINALROM` / no `ramromMain`.** The ROM build excludes the `#ifndef _FINALROM` debug thread code. The matched function only contains `osCreatePiManager`.

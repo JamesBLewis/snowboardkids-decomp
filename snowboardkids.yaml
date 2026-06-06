@@ -161,7 +161,7 @@ segments:
       - [0xA4500, c, ultra/gu/perspective]
       - [0xA4790, c, ultra/os/stopthread]
       - [0xA4850, c, ultra/os/initialize]
-      - [0xA4AE0, asm] # ultra:pimgr.c
+      - [0xA4AE0, c, ultra/io/pimgr]
       - [0xA4C70, asm]
       - [0xA4DB0, c, ultra/io/viblack]
       - [0xA4E20, asm]
@@ -249,7 +249,8 @@ segments:
       - [0xB1AA0, asm]
       - [0xB1C00, data]
       - [0xDFED0, .data, ultra/os/initialize]
-      - [0xDFEF0, data]
+      - [0xDFEF0, .data, ultra/io/pimgr]
+      - [0xDFF20, data]
       - [0xE11A0, .rodata, 1050]
       - [0xE1500, rodata]
       - [0xE1580, rodata]
@@ -311,7 +312,8 @@ segments:
       - [0xE2B00, rodata]
       - { type: bss, name: bss_chunk_a, vram: 0x800E29C0 }
       - { type: .bss, name: ultra/os/initialize, vram: 0x8015CCD0 }
-      - { type: bss, name: bss_chunk_b, vram: 0x8015CCE0 }
+      - { type: .bss, name: ultra/io/pimgr, vram: 0x8015CCE0 }
+      - { type: bss, name: bss_chunk_c, vram: 0x8015DEB0 }
 
   - type: bin
     start: 0xE35C0
