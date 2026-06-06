@@ -13,6 +13,7 @@ description: Match a given segment to a libultra ROM segment. Use this when conv
 - Source under `src/ultra` should use real libultra names, not `func_...` or `D_...` placeholders.
 - Add required callable ROM symbols to `symbol_addrs.txt` with runtime VRAM addresses, not `0x700...` splat placeholder addresses. Never add libultra function aliases to `linker_scripts/libultra_syms.ld`.
 - If a libultra source file emits `.data` or `.bss`, match those sections in `snowboardkids.yaml`; do not remove the C definitions, make them `extern`, allow multiple definitions, add linker-script aliases, or delete generated linker entries.
+- When asm references a field inside a known libultra struct, annotate the owning struct symbol in `symbol_addrs.txt` with its real type and size. Do not add a linker-script alias for the field address.
 
 ## Workflow
 
@@ -84,19 +85,41 @@ description: Match a given segment to a libultra ROM segment. Use this when conv
 
    If the second command finds unrelated existing placeholders, do not rename them blindly. Fix only the symbols involved in the segment being matched.
 
-7. Build and verify:
+7. If asm references an address inside a known libultra struct, fix the owning symbol metadata instead of creating a standalone `D_...` symbol. The desired output is an addend reference such as `%hi(__osPiDevMgr + 0x8)`, not a generated field label and not a linker-script alias.
+
+   Example: `0x800DF2F8` is `__osPiDevMgr.cmdQueue`, where `__osPiDevMgr` starts at `0x800DF2F0` and `OSDevMgr.cmdQueue` is at offset `0x8`. Annotate the struct:
+
+   ```text
+   __osPiDevMgr = 0x800DF2F0; // type:OSDevMgr size:0x1C
+   ```
+
+   Then regenerate/extract as needed and verify the asm uses the base symbol plus addend:
+
+   ```sh
+   rg -n "D_800DF2F8|__osPiDevMgr \\+ 0x8" asm symbol_addrs.txt linker_scripts
+   ```
+
+   Do not add this to `linker_scripts/libultra_syms.ld`:
+
+   ```ld
+   D_800DF2F8 = 0x800DF2F8;
+   ```
+
+   The struct size should come from the header layout and the observed next symbol or BSS/data range. For `OSDevMgr`, the fields are seven 4-byte words, so the size is `0x1C`.
+
+8. Build and verify:
 
    ```sh
    ./tools/build-and-verify.sh
    ```
 
-8. If verification fails, diff every function emitted by the new source before looking for linker or data issues:
+9. If verification fails, diff every function emitted by the new source before looking for linker or data issues:
 
    ```sh
    python3 tools/asm-differ/diff.py --no-pager osPfsNumFiles
    ```
 
-9. Document Learnings:
+10. Document Learnings:
 
 Update the DECOMPILATION_LEARNINGA.md file in the root of the project with any additional learnings that you gathered as part of matching this segment.
 
@@ -150,6 +173,7 @@ You can use the match-data-file skill to help match  the correct segment. Note t
 - Do not edit the Makefile to `sed` generated linker scripts or add `--allow-multiple-definition` to hide duplicate data.
 - Do not add libultra function aliases to `linker_scripts/libultra_syms.ld`; define the symbol in `symbol_addrs.txt` at its runtime `0x800...` address and rename the real labels/references.
 - Do not add libultra data aliases to `linker_scripts/libultra_syms.ld`; match the data/BSS section in `snowboardkids.yaml`.
+- Do not add linker-script aliases for struct field addresses such as `D_800DF2F8`. Annotate the owning symbol with `type:` and `size:` in `symbol_addrs.txt` so asm can reference `symbol + offset`.
 - Do not change real libultra data definitions to `extern` just to avoid duplicate storage; it can change IDO codegen. Match the emitted data/BSS segments instead.
 - Do not replace archive-member linker entries by text substitution.
 - Do not link `libultra_rom.a` just to extract one matched object.
