@@ -137,14 +137,14 @@ segments:
       - [0x99980, asm]
       - [0x9A2A0, asm]
       - [0x9CE70, asm] # libmus:player_commands.c
-      - [0xA0E90, asm] # ultra:createmesgqueue.c
-      - [0xA0EC0, asm] # ultra:seteventmesg.c
+      - [0xA0E90, c, ultra/os/createmesgqueue]
+      - [0xA0EC0, c, ultra/os/seteventmesg]
       - [0xA0F30, c, ultra/io/controller]
-      - [0xA12F0, asm] # ultra:createthread.c
-      - [0xA1440, asm] # ultra:startthread.c
+      - [0xA12F0, c, ultra/os/createthread]
+      - [0xA1440, c, ultra/os/startthread]
       - [0xA1590, c, ultra/os/recvmesg]
       - [0xA16D0, c, ultra/io/contreaddata]
-      - [0xA1930, asm] # ultra:sendmesg.c
+      - [0xA1930, c, ultra/os/sendmesg]
       - [0xA1A80, c, ultra/io/motor]
       - [0xA2220, c, ultra/io/pfsinitpak]
       - [0xA2490, c, ultra/io/pfssearchfile]
@@ -157,14 +157,15 @@ segments:
       - [0xA4100, c, ultra/libc/sprintf]
       - [0xA4180, asm]
       - [0xA41C0, c, ultra/libc/ll]
-      - [0xA4480, asm] # ultra:writebackdcache.s
+      - [0xA4480, hasm, ultra/os/writebackdcache]
       - [0xA4500, c, ultra/gu/perspective]
       - [0xA4790, c, ultra/os/stopthread]
       - [0xA4850, c, ultra/os/initialize]
       - [0xA4AE0, c, ultra/io/pimgr]
-      - [0xA4C70, asm] # ultra:setthreadpri.c
+      - [0xA4C70, c, ultra/os/setthreadpri]
+      - [0xA4D50, asm]
       - [0xA4DB0, c, ultra/io/viblack]
-      - [0xA4E20, asm] # ultra:invaldcache.s
+      - [0xA4E20, hasm, ultra/os/invaldcache]
       - [0xA4ED0, c, ultra/io/pidma]
       - [0xA4FE0, c, ultra/io/visetspecial]
       - [0xA51A0, asm] # ultra:vimgr.c
@@ -173,8 +174,10 @@ segments:
       - [0xA55E0, hasm, ultra/os/writebackdcacheall]
       - [0xA5610, c, ultra/io/sptask]
       - [0xA58D0, c, ultra/io/sptaskyield]
-      - [0xA5970, asm] # ultra:vigetcurrframebuf.c
-      - [0xA5AE0, asm] # ultra:heapinit.c
+      - [0xA5970, asm]
+      - [0xA5A60, c, ultra/io/vigetcurrframebuf]
+      - [0xA5AA0, asm]
+      - [0xA5AE0, c, ultra/audio/heapinit]
       - [0xA5B20, asm]
       - [0xA5B80, c, ultra/audio/synaddplayer]
       - [0xA5BD0, asm] # ultra:synallocvoice.c
@@ -185,9 +188,10 @@ segments:
       - [0xA6050, c, ultra/audio/synsetpan]
       - [0xA60E0, c, ultra/audio/synsetpitch]
       - [0xA6170, c, ultra/gu/sinf]
-      - [0xA6330, asm] # ultra:aisetfreq.c
+      - [0xA6330, c, ultra/io/aisetfreq]
+      - [0xA6490, asm]
       - [0xA64C0, asm] # ultra:sl.c (guess)
-      - [0xA6550, asm] # ultra:osVirtualToPhysical
+      - [0xA6550, c, ultra/os/virtualtophysical]
       - [0xA65D0, c, ultra/io/aisetnextbuf]
       - [0xA6680, c, ultra/io/aigetlen]
       - [0xA6690, asm] # ultra:synthesizer.c (guess)
@@ -197,52 +201,58 @@ segments:
       - [0xA6F60, c, ultra/io/sirawdma]
       - [0xA7010, c, ultra/io/siacs]
       - [0xA70D0, asm] # ultra:exceptasm.s
-      - [0xA79E0, asm] # ultra:pfsisplug.c
-      - [0xA7D50, asm] # ultra:crc.c
-      - [0xA85E0, asm] # ultra:pfsgetstatus.c (guess)
-      - [0xA86F0, asm] # ultra:contpfs.c
+      - [0xA79E0, c, ultra/io/pfsisplug]
+      - [0xA7D50, c, ultra/io/crc]
+      - [0xA7ED0, asm]
+      - [0xA85E0, c, ultra/io/pfsgetstatus]
+      - [0xA86F0, c, ultra/io/contpfs]
       - [0xA9450, asm] # ultra:pfschecker.c (guess)
       - [0xAA520, asm] # ultra:xprintf.c (guess)
-      - [0xAAB70, asm] # ultra:string.c
-      - [0xAAC10, asm] # ultra:mtxutil.c
-      - [0xAAE80, asm] # ultra:cosf.c
-      - [0xAAFF0, asm] # ultra:setsr.s
-      - [0xAB000, asm] # ultra:getsr.s
-      - [0xAB010, asm] # ultra:sprawwrite.c
-      - [0xAB0C0, asm] # ultra:invalicache.s
-      - [0xAB140, asm] # ultra:maptlbrdb.s
-      - [0xAB1A0, asm] # ultra:pirawread.c
-      - [0xAB200, asm] # ultra:bzero.s
-      - [0xAB2A0, asm] # ultra:cartrominit.c
-      - [0xAB390, asm] # ultra:leodiskinit.c
+      - [0xAAB70, c, ultra/libc/string]
+      - [0xAAC10, c, ultra/gu/mtxutil]
+      - [0xAAE80, c, ultra/gu/cosf]
+      - [0xAAFF0, hasm, ultra/os/setsr]
+      - [0xAB000, hasm, ultra/os/getsr]
+      - [0xAB010, hasm, ultra/os/setfpccsr]
+      - [0xAB020, c, ultra/io/sirawread]
+      - [0xAB070, c, ultra/io/sirawwrite]
+      - [0xAB0C0, hasm, ultra/os/invalicache]
+      - [0xAB140, hasm, ultra/os/maptlbrdb]
+      - [0xAB1A0, c, ultra/io/pirawread]
+      - [0xAB200, hasm, ultra/libc/bzero]
+      - [0xAB2A0, c, ultra/io/cartrominit]
+      - [0xAB390, c, ultra/io/leodiskinit]
       - [0xAB490, asm] # libmus:player_api.c
-      - [0xAB570, asm] # ultra:pirawdma.c
-      - [0xAB880, asm] # ultra:devmgr.c
+      - [0xAB570, c, ultra/io/pirawdma]
+      - [0xAB650, c, ultra/io/epirawdma]
+      - [0xAB880, c, ultra/io/devmgr]
+      - [0xABD10, asm]
       - [0xABE50, asm] # libmus:player_api.c
       - [0xABFD0, asm] # libmus:timerintr.c
-      - [0xAC3D0, asm] # ultra:getactivequeue.c
+      - [0xAC3D0, c, ultra/io/vigetcurrcontext]
       - [0xAC3E0, asm]
-      - [0xAC740, asm] # ultra:getcount.s
-      - [0xAC750, asm] # ultra:_bcopy
-      - [0xACA60, asm] # ultra:spsetstat.c
-      - [0xACA70, asm] # ultra:spsetpc.c
-      - [0xACAB0, asm] # ultra:sprawdma.c
-      - [0xACB40, asm] # ultra:sp.c
-      - [0xACB70, asm] # ultra:spgetstat.c
+      - [0xAC740, hasm, ultra/os/getcount]
+      - [0xAC750, hasm, ultra/libc/bcopy]
+      - [0xACA60, c, ultra/io/spsetstat]
+      - [0xACA70, c, ultra/io/spsetpc]
+      - [0xACAB0, c, ultra/io/sprawdma]
+      - [0xACB40, c, ultra/io/sp]
+      - [0xACB70, c, ultra/io/spgetstat]
       - [0xACB80, asm]
       - [0xACB90, asm]
-      - [0xACC50, asm] # ultra:ai.c
+      - [0xACC50, c, ultra/io/ai]
+      - [0xACC80, asm]
       - [0xAD420, asm]
       - [0xAD4C0, asm] # ultra:mainbus.c
       - [0xAD610, asm] # ultra:load.c
       - [0xAE160, asm] # ultra:resample.c
       - [0xAE460, asm] # ultra:env.c
       - [0xAF0C0, asm] # ultra:auxbus.c
-      - [0xAF1D0, asm] # ultra:save.c
-      - [0xAF290, asm] # ultra:si.c
+      - [0xAF1D0, c, ultra/audio/save]
+      - [0xAF290, c, ultra/io/si]
       - [0xAF2C0, asm] # ultra:leointerrupt.c
       - [0xAFB40, asm]
-      - [0xAFC40, asm] # ultra:xlitob.c
+      - [0xAFC40, c, ultra/libc/xlitob]
       - [0xAFEE0, asm] # ultra:xldtob.c
       - [0xB09A0, asm]
       - [0xB0A00, asm]
@@ -263,6 +273,8 @@ segments:
       - [0xE0C80, data]
       - [0xE0CA0, .data, ultra/io/siacs]
       - [0xE0CB0, data]
+      - [0xE1080, .data, ultra/libc/xlitob]
+      - [0xE10B0, data]
       - [0xE11A0, .rodata, 1050]
       - [0xE1500, rodata]
       - [0xE1580, rodata]
@@ -315,8 +327,8 @@ segments:
       - [0xE27D0, rodata]
       - [0xE27E0, rodata]
       - [0xE2830, rodata]
-      - [0xE2930, rodata]
-      - [0xE2980, rodata]
+      - [0xE2930, .rodata, ultra/gu/cosf]
+      - [0xE2980, .rodata, ultra/io/devmgr]
       - [0xE29A0, rodata]
       - [0xE29D0, rodata]
       - [0xE2A10, rodata]
@@ -324,11 +336,16 @@ segments:
       - [0xE2AD0, rodata]
       - [0xE2B00, rodata]
       - { type: bss, name: bss_chunk_a, vram: 0x800E29C0 }
+      - { type: .bss, name: ultra/os/seteventmesg, vram: 0x8015C980 }
+      - { type: bss, name: bss_chunk_b, vram: 0x8015CA00 }
       - { type: .bss, name: ultra/os/initialize, vram: 0x8015CCD0 }
       - { type: .bss, name: ultra/io/pimgr, vram: 0x8015CCE0 }
       - { type: bss, name: bss_chunk_c, vram: 0x8015DEB0 }
       - { type: .bss, name: ultra/io/siacs, vram: 0x8015F110 }
-      - { type: bss, name: bss_chunk_d, vram: 0x8015F130 }
+      - { type: .bss, name: ultra/io/pfsisplug, vram: 0x8015F130 }
+      - { type: .bss, name: ultra/io/cartrominit, vram: 0x8015F170 }
+      - { type: .bss, name: ultra/io/leodiskinit, vram: 0x8015F1F0 }
+      - { type: bss, name: bss_chunk_d, vram: 0x8015F270 }
 
   - type: bin
     start: 0xE35C0

@@ -30,6 +30,8 @@ For straightforward ultra functions like `osViSetMode` that don't use _DEBUG cod
 
 For libultra functions that are handwritten assembly (e.g., `osWritebackDCacheAll`, `osWritebackDCache`, `bzero`), use the `hasm` segment type in `snowboardkids.yaml` instead of `asm`. The `hasm` type tells splat the code is handwritten and should not be split into individual functions. The YAML comment may be wrong about which function is actually at a given address — verify with the disassembly and `symbol_addrs.txt` before matching (e.g., `writebackdcache.s` contains `osWritebackDCache` while `writebackdcacheall.s` contains `osWritebackDCacheAll`, which are at different ROM addresses).
 
+Upstream libc assembly can sometimes be reused directly. `../ultralib/src/libc/bzero.s` and `../ultralib/src/libc/bcopy.s` matched as `hasm` under `asm/ultra/libc/` without local macro rewrites.
+
 ## Duplicate Symbol Names at Same Address
 
 Some symbols may share the same VRAM address (e.g., `__osSiRawReadIo` and `__osSpRawReadIo` at `0x800AA420`). These are likely different names for the same function. Remove the incorrect/unused name to avoid duplicate symbol errors. Check which name is correct based on the calling context (SI vs SP address space).
@@ -82,3 +84,85 @@ With IDO at `-O1`, `u32 var = 0` generates a `.data` section entry (not `.bss`).
 ## siacs.c: Including PRinternal/macros.h for ALIGNED
 
 The `ALIGNED(x)` macro (defined in `PRinternal/macros.h`) expands to `__attribute__((aligned(x)))`, which is redefined as a no-op for non-GCC compilers (IDO) via `#define __attribute__(x)`. Ultra source files using `ALIGNED` must include `PRinternal/macros.h` or IDO will fail with a syntax error at the `ALIGNED` token.
+
+## VI Current Context vs Active Queue Labels
+
+Do not trust `ultra:` YAML comments or generated `D_...` names when a tiny helper returns a global pointer. The range at `0xAC3D0` was annotated as `getactivequeue.c`, but the target loads `0x800E0190`, which is the VI current-context pointer. The correct source is `io/vigetcurrcontext.c` (`__osViGetCurrentContext`), not `os/getactivequeue.c`.
+
+Likewise, `D_800E0190` is the real `__osViCurr` pointer. A later zero-filled block at `0x800E0320` was mislabeled `__osViCurr`; using that stale symbol made `osViGetCurrentFramebuffer` compile to load from `0x800E0320` instead of the target `0x800E0190`. Rename the data label and all asm references to the owning libultra symbol rather than adding aliases.
+
+## Single Commented Segments May Contain Several Libultra Files
+
+The original `0xA5970` segment was commented as `vigetcurrframebuf.c`, but it also contains earlier VI helpers and a following framebuffer helper. Split the range around the exact function: keep `0xA5970..0xA5A60` as asm, match `osViGetCurrentFramebuffer` at `0xA5A60`, then keep `0xA5AA0` as asm until the next helper is identified. If an attempted C segment causes unresolved neighboring symbols, inspect the original range and split it instead of forcing the whole comment range to one source file.
+
+This also applies to incorrect comments. The range at `0xAB010` was commented as `sprawwrite.c`, but the actual functions were `__osSetFpcCsr`, `__osSiRawReadIo`, and `__osSiRawWriteIo`. Split it into `hasm, ultra/os/setfpccsr`, `c, ultra/io/sirawread`, and `c, ultra/io/sirawwrite`; do not keep the misleading comment just because it starts with `ultra:`.
+
+`osAiSetFrequency` at `0xA6330` matches upstream `io/aisetfreq.c`, but the raw segment also includes a following helper at `0xA6490`. Split `aisetfreq.c` at `0xA6490` and leave the helper raw until it is identified.
+
+## Local Header Drift in Audio Heap Sources
+
+Upstream `audio/heapinit.c` includes `<libaudio.h>` and gets `AL_CACHE_ALIGN` from upstream `synthInternals.h`. In this repo, `libaudio.h` lives as `PR/libaudio.h` and the local `include/synthInternals.h` does not define `AL_CACHE_ALIGN`. Defining `AL_CACHE_ALIGN` as `15` locally in `heapinit.c` preserves the upstream codegen and avoids broad header changes.
+
+## Disabled Asserts Without assert.h
+
+Several upstream IO files include `assert.h`, but this repo does not provide that header and builds with `NDEBUG`. For simple VERSION_I IO functions such as `sirawread.c`, `sirawwrite.c`, `pirawread.c`, and `sprawdma.c`, remove the `assert.h` include and the assert statements rather than adding a new local assert header. The resulting code matches because those assertions are disabled in the target build.
+
+## string.c Function Order Can Differ from Upstream
+
+The target `string.c` range at `0xAAB70` uses the upstream function bodies but ROM order is `memcpy`, `strlen`, then `strchr`, not the upstream source order. Port the bodies in ROM order so the object boundaries line up. Also convert `strchr` from the splat placeholder `0x700A9FC4` to the real VRAM address `0x800A9FC4`.
+
+## mtxutil.c Requires ROM Order and Divide-Form L2F
+
+The target `mtxutil.c` range at `0xAAC10` uses `guMtxF2L`, `guMtxIdentF`, `guMtxIdent`, then `guMtxL2F`; upstream orders `guMtxL2F` earlier. Keep the source functions in ROM order. `guMtxL2F` also needs a local `float scale = 0x10000;` and `(float)q / scale`; using the local `FIX32TOF` macro folds into reciprocal multiply at `-O2`, but the target emits `div.s` with `65536.0`.
+
+## crc.c Only Covers the Initial CRC Helpers
+
+The range commented `ultra:crc.c` at `0xA7D50` only contains `__osContAddressCrc` and `__osContDataCrc` through `0xA7ED0`. The following code is controller RAM read/write logic, so split the YAML at `0xA7ED0` and leave the neighbor raw until it is matched to its actual source. The VERSION_I `crc.c` bodies match directly at the repo's IO optimization settings.
+
+## pfsisplug.c Owns __osPfsPifRam and Has a VERSION_I Clear Loop
+
+`pfsisplug.c` defines the `OSPifRam __osPfsPifRam` BSS object at `0x8015F130`; split BSS so `ultra/io/pfsisplug` owns `0x8015F130..0x8015F170`. Annotate `__osPfsPifRam = 0x8015F130; // type:OSPifRam size:0x40` so raw neighboring asm references to `pifstatus` become `__osPfsPifRam + 0x3C` instead of standalone field labels.
+
+The target `__osPfsRequestData` includes a VERSION_I-specific loop that clears all 16 words of `__osPfsPifRam` before setting `pifstatus`. Add the loop as `((u32 *)&__osPfsPifRam)[i] = 0;`; a local `u32 *ram` changes the stack frame. Also declare `u8 *ptr` without initialization and assign `ptr = (u8 *)&__osPfsPifRam;` after `__osPfsPifRam.pifstatus = CONT_CMD_EXE;` so IDO does not hoist the pointer setup above the clear loop.
+
+## cosf.c Mirrors sinf.c Segment Ownership
+
+`gu/cosf.c` matches upstream directly at this repo's GU settings. Like `sinf.c`, it owns both text and rodata: text at `0xAAE80` and the `0x50` coefficient rodata block at `0xE2930`.
+
+## pirawdma.c Segment Also Contains epirawdma.c
+
+The range commented `ultra:pirawdma.c` at `0xAB570` contains two source files: `io/pirawdma.c` for `osPiRawStartDma` at `0xAB570..0xAB650`, then `io/epirawdma.c` for `osEPiRawStartDma` at `0xAB650..0xAB874`, followed by padding to the existing `0xAB880` boundary. Split the YAML at the function label instead of assigning the whole commented range to `pirawdma.c`. Both upstream VERSION_I bodies match directly at the repo's IO `-O1` settings.
+
+## cartrominit.c and leodiskinit.c Omit speed Stores
+
+The VERSION_I upstream `io/cartrominit.c` and `io/leodiskinit.c` are close, but this target does not emit `CartRomHandle.speed = 0` or `LeoDiskHandle.speed = 0`. Leaving those stores in makes the combined text 0x10 bytes too long, which shifts all following text/data/BSS addresses and creates misleading downstream diffs. Use `_bzero` rather than upstream `bzero`, matching this repo's real libc label. The handle BSS objects have `OSPiHandle` size `0x74` and object padding to `0x80`; `__osDiskHandle` sits at `LeoDiskHandle + 0x74` (`0x8015F264`), and the following raw BSS resumes at `0x8015F270`.
+
+## devmgr.c Ends Before the VI Initializer
+
+The `ultra:devmgr.c` range starts at `0xAB880`, but only `__osDevMgrMain` belongs to `io/devmgr.c`; it ends at `0xABD10`. The following `func_800AB110` is a separate VI initialization helper and should remain raw until identified. `devmgr.c` also owns the switch jump table rodata at `0xE2980`. Convert its callable `0x700...` placeholders (`__osResetGlobalIntMask`, `osEPiRawWriteIo`, `osEPiRawReadIo`, `__osSetGlobalIntMask`, `osYieldThread`) to real `0x800...` runtime addresses before linking the source.
+
+## xlitob.c Owns 0x30 Bytes of .data
+
+`libc/xlitob.c` matches upstream for `_Litob`, but its two digit strings are emitted as a 0x30-byte `.data` section at `0xE1080`. Although the string contents account for 0x28 bytes, IDO pads the static data through `0xE10B0`; splitting the following raw data at `0xE10A8` shifts downstream VMAs and breaks the checksum even when the text diff is clean. The helper `lldiv` is the raw function at real runtime address `0x800B0C40`, so convert the old `0x700B0C40` placeholder and rename the raw asm label.
+
+The neighboring `xldtob.c` comment begins at `0xAFEE0`, but that range starts with a static helper before `_Ldtob`. Inspect and split the helper/function boundaries before assigning the range to upstream `xldtob.c`.
+
+`xldtob.c` should be deferred in this repo unless the compile path can handle the needed helper order. With the normal `-O2` asm-processor path, IDO emits `_Ldtob` first and helper code after it; the target has `_Genld` first at `0xAFEE0` and `_Ldtob` at `0xAF850`. Other decomp repos commonly compile this file with `-O3`, but this repo's asm-processor only accepts `-O0`, `-O1`, `-O2`, or `-g`, so a direct C conversion is not currently a clean match.
+
+## pfsgetstatus.c Reuses pfsisplug Helpers
+
+The target `io/pfsgetstatus.c` at `0xA85E0` does not match upstream's one-channel request helper path. It calls `__osPfsRequestData(CONT_CMD_REQUEST_STATUS)` and `__osPfsGetInitData`, both already emitted by `pfsisplug.c`, then indexes the returned `OSContStatus data[MAXCONTROLLERS]` by channel. Matching the target body directly is cleaner than porting upstream `__osPfsRequestOneChannel` / `__osPfsGetOneChannelData`.
+
+## contpfs.c Must Own the Whole Range
+
+The first two `contpfs.c` helpers (`__osSumcalc` and `__osIdCheckSum`) match exactly as C, but splitting after them at `0xA87B4` fails because the C object's `.text` section pads to 16-byte alignment and shifts the following raw asm. Use the full upstream `io/contpfs.c` so the object owns `0xA86F0..0xA9450` and the internal functions pack without section-end padding. Also convert the old `__osGetId = 0x700A8164` placeholder to real VRAM `0x800A8164`; the following raw `pfschecker.c` caller should call `__osGetId`, not `func_800A8164`.
+
+## save.c Matches in ROM Order
+
+The target `audio/save.c` range at `0xAF1D0` is ordered `alSaveParam` first, then `alSavePull` at `0xAF204`; upstream lists `alSavePull` before `alSaveParam`. Port the upstream bodies in ROM order and omit the disabled assert/include noise. Convert `alSaveParam` from its `0x700AE5D0` placeholder to real VRAM `0x800AE5D0`.
+
+`audio/mainbus.c` and `audio/auxbus.c` have the same ROM-order `Param`-then-`Pull` layout, but direct C ports do not currently match: IDO keeps the fifth `Acmd *p` argument in `$s1` for the initial clear commands, while the target loads it into `$t0` before saving callee registers and only later uses `$s1` for `sources`. Leave those ranges raw until the exact source shape or flags are found.
+
+## syncprintf.c Cannot Be Split to Only osSyncPrintf
+
+The `ultra:syncprintf.c` comment on the large `0x464E0` raw segment is misleading: `osSyncPrintf` is only the tiny final-ROM stub at `0x49A4C..0x49A60`, surrounded by unrelated/raw functions. Compiling an empty variadic `osSyncPrintf` with `-O1` emits the exact 0x14-byte instruction sequence, but the C object's `.text` section pads to 0x20. Splitting only `0x49A4C..0x49A60` shifts the following raw function at `0x49A60`; convert the following function too or leave this range raw.

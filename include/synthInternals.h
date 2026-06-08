@@ -3,6 +3,18 @@
 
 #include <PR/libaudio.h>
 
+#define AL_MAX_RSP_SAMPLES 160
+#define AL_DECODER_IN 0
+#define AL_RESAMPLER_OUT 0
+#define AL_TEMP_0 0
+#define AL_DECODER_OUT 320
+#define AL_TEMP_1 320
+#define AL_TEMP_2 640
+#define AL_MAIN_L_OUT 1088
+#define AL_MAIN_R_OUT 1408
+#define AL_AUX_L_OUT 1728
+#define AL_AUX_R_OUT 2048
+
 enum {
     AL_FILTER_FREE_VOICE,
     AL_FILTER_SET_SOURCE,
@@ -72,6 +84,12 @@ typedef struct {
     s16                 unity;
     ALWaveTable         *wave;
 } ALStartParam;
+
+typedef struct ALSave_s {
+    ALFilter            filter;
+    s32                 dramout;
+    s32                 first;
+} ALSave;
 
 ALParam *__allocParam(void);
 s32 _timeToSamples(ALSynth *synth, s32 micros);

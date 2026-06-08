@@ -83,6 +83,7 @@ RM_MDEBUG    = $(OBJCOPY) --remove-section .mdebug $@
 $(BUILD_DIR)/src/ultra/io/%.o: C_OPT = -O1
 $(BUILD_DIR)/src/ultra/audio/%.o: C_OPT = -O2
 $(BUILD_DIR)/src/ultra/os/%.o: C_OPT = -O1
+$(BUILD_DIR)/src/ultra/os/seteventmesg.o: CFLAGS += -D_FINALROM
 $(BUILD_DIR)/src/ultra/gu/%.o: C_OPT = -O2
 $(BUILD_DIR)/src/ultra/gu/%.o: CFLAGS += -Iinclude/PR
 $(BUILD_DIR)/src/ultra/gu/perspective.o: C_OPT = -O2
