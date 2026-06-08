@@ -121,7 +121,7 @@ description: Match a given segment to a libultra ROM segment. Use this when conv
 
 10. Document Learnings:
 
-Update the DECOMPILATION_LEARNINGA.md file in the root of the project with any additional learnings that you gathered as part of matching this segment.
+Update the DECOMPILATION_LEARNINGS.md file in the root of the project with any additional learnings that you gathered as part of matching this segment.
 
 ## Build Flags
 
