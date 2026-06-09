@@ -235,9 +235,7 @@ A direct upstream-style C port gets `alResampleParam` close but emits a `0x2F0` 
 
 `libc/xlitob.c` matches upstream for `_Litob`, but its two digit strings are emitted as a 0x30-byte `.data` section at `0xE1080`. Although the string contents account for 0x28 bytes, IDO pads the static data through `0xE10B0`; splitting the following raw data at `0xE10A8` shifts downstream VMAs and breaks the checksum even when the text diff is clean. The helper `lldiv` is the raw function at real runtime address `0x800B0C40`, so convert the old `0x700B0C40` placeholder and rename the raw asm label.
 
-The neighboring `xldtob.c` comment begins at `0xAFEE0`, but that range starts with a static helper before `_Ldtob`. Inspect and split the helper/function boundaries before assigning the range to upstream `xldtob.c`.
-
-`xldtob.c` should be deferred in this repo unless the compile path can handle the needed helper order. With the normal `-O2` asm-processor path, IDO emits `_Ldtob` first and helper code after it; the target has `_Genld` first at `0xAFEE0` and `_Ldtob` at `0xAF850`. Other decomp repos commonly compile this file with `-O3`, but this repo's asm-processor only accepts `-O0`, `-O1`, `-O2`, or `-g`, so a direct C conversion is not currently a clean match.
+The neighboring `xldtob.c` range at `0xAFEE0..0xB09A0` matches as `src/ultra/libc/xldtob.c` when compiled with direct IDO `-O3` instead of the asm-processor path. The object emits `_Genld` first and `_Ldtob` at object offset `0x570`; keep the upstream `_Genld` definition/control-flow shape because small cleanups can shrink `_Genld` by `0x10` and shift `_Ldtob`. Its `.rodata` is the 0x60-byte block at ROM `0xE2A70..0xE2AD0`.
 
 ## pfsgetstatus.c Reuses pfsisplug Helpers
 

@@ -253,7 +253,7 @@ segments:
       - [0xAF2C0, c, ultra/io/leointerrupt]
       - [0xAFB40, c, ultra/os/destroythread]
       - [0xAFC40, c, ultra/libc/xlitob]
-      - [0xAFEE0, asm] # ultra:xldtob.c
+      - [0xAFEE0, c, ultra/libc/xldtob]
       - [0xB09A0, c, ultra/os/resetglobalintmask]
       - [0xB0A00, c, ultra/io/epirawwrite]
       - [0xB0A50, c, ultra/io/epirawread]
@@ -337,7 +337,7 @@ segments:
       - [0xE29A0, rodata]
       - [0xE29D0, rodata]
       - [0xE2A10, rodata]
-      - [0xE2A70, rodata]
+      - [0xE2A70, .rodata, ultra/libc/xldtob]
       - [0xE2AD0, .rodata, ultra/audio/reverb]
       - [0xE2B00, rodata]
       - { type: bss, name: bss_chunk_a, vram: 0x800E29C0 }
