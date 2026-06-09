@@ -246,8 +246,8 @@ segments:
       - [0xACC80, asm]
       - [0xAD420, asm]
       - [0xAD4C0, c, ultra/audio/mainbus]
-      - [0xAD610, asm] # ultra:load.c
-      - [0xAE160, asm] # ultra:resample.c
+      - [0xAD610, c, ultra/audio/load]
+      - [0xAE160, asm, ultra/audio/resample]
       - [0xAE460, c, ultra/audio/env]
       - [0xAF0C0, asm,  ultra/audio/auxbus]
       - [0xAF1D0, c, ultra/audio/save]

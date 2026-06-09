@@ -121,6 +121,24 @@ typedef struct ALMainBus_s {
 
 void alFilterNew(ALFilter *f, ALCmdHandler h, ALSetParam s, s32 type);
 
+typedef struct {
+    ALFilter            filter;
+    ADPCM_STATE         *state;
+    ADPCM_STATE         *lstate;
+    ALRawLoop           loop;
+    ALWaveTable         *table;
+    s32                 bookSize;
+    ALDMAproc           dma;
+    void                *dmaState;
+    s32                 sample;
+    s32                 lastsam;
+    s32                 first;
+    s32                 memin;
+} ALLoadFilter;
+
+void alLoadNew(ALLoadFilter *f, ALDMANew dma, ALHeap *hp);
+s32 alLoadParam(void *filter, s32 paramID, void *param);
+
 typedef struct ALResampler_s {
     ALFilter            filter;
     RESAMPLE_STATE      *state;
