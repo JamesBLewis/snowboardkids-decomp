@@ -65,7 +65,9 @@ SPLAT   = $(PYTHON) -m splat split
 N64CRC  = $(TOOLS_DIR)/n64crc.py
 ASM_PROC = $(TOOLS_DIR)/asm-processor/build.py
 
-IDO_CC = $(PYTHON) $(ASM_PROC) $(CC) -- $(AS) $(ASFLAGS) --
+IDO_ASMPROC = $(PYTHON) $(ASM_PROC) $(CC) -- $(AS) $(ASFLAGS) --
+IDO_DIRECT  = $(CC)
+IDO_CC      = $(IDO_ASMPROC)
 
 # Flags
 
@@ -76,20 +78,17 @@ C_MIPS       = -mips2
 C_OPT        = -O2
 CFLAGS       = -c $(C_MIPS) -G 0 -non_shared -fullwarn -Xcpluscomm \
                -nostdinc -Wab,-r4300_mul -woff 649,838,712,516 \
-               -Iinclude $(C_DEFINES)
+               -Iinclude -Iinclude/PR -Isrc/ultra/audio -Isrc/ultra/libc \
+               $(C_DEFINES)
 OBJCOPYFLAGS = -O binary
 RM_MDEBUG    = $(OBJCOPY) --remove-section .mdebug $@
 
 $(BUILD_DIR)/src/ultra/io/%.o: C_OPT = -O1
 $(BUILD_DIR)/src/ultra/audio/%.o: C_OPT = -O2
 $(BUILD_DIR)/src/ultra/audio/reverb.o: C_OPT = -O3
-$(BUILD_DIR)/src/ultra/audio/reverb.o: CFLAGS += -Isrc/ultra/audio
-$(BUILD_DIR)/src/ultra/audio/reverb.o: IDO_CC = $(CC)
-$(BUILD_DIR)/src/ultra/audio/reverb.o: src/ultra/audio/reverb.c
+$(BUILD_DIR)/src/ultra/audio/reverb.o: IDO_CC = $(IDO_DIRECT)
 $(BUILD_DIR)/src/ultra/os/%.o: C_OPT = -O1
-$(BUILD_DIR)/src/ultra/os/seteventmesg.o: CFLAGS += -D_FINALROM
 $(BUILD_DIR)/src/ultra/gu/%.o: C_OPT = -O2
-$(BUILD_DIR)/src/ultra/gu/%.o: CFLAGS += -Iinclude/PR
 $(BUILD_DIR)/src/ultra/gu/perspective.o: C_OPT = -O2
 
 $(BUILD_DIR)/src/ultra/io/sptask.o: C_OPT = -O2
@@ -98,11 +97,9 @@ $(BUILD_DIR)/src/ultra/io/sptask.o: CFLAGS += -DF3DEX_GBI
 $(BUILD_DIR)/src/ultra/libc/ll.o: C_OPT = -O1
 $(BUILD_DIR)/src/ultra/libc/ll.o: C_MIPS = -mips3 -32
 $(BUILD_DIR)/src/ultra/libc/xprintf.o: C_OPT = -O3
-$(BUILD_DIR)/src/ultra/libc/xprintf.o: CFLAGS += -Isrc/ultra/libc
-$(BUILD_DIR)/src/ultra/libc/xprintf.o: IDO_CC = $(CC)
+$(BUILD_DIR)/src/ultra/libc/xprintf.o: IDO_CC = $(IDO_DIRECT)
 $(BUILD_DIR)/src/ultra/libc/xldtob.o: C_OPT = -O3
-$(BUILD_DIR)/src/ultra/libc/xldtob.o: CFLAGS += -Isrc/ultra/libc
-$(BUILD_DIR)/src/ultra/libc/xldtob.o: IDO_CC = $(CC)
+$(BUILD_DIR)/src/ultra/libc/xldtob.o: IDO_CC = $(IDO_DIRECT)
 
 LD_SCRIPT      = $(BASENAME).ld
 LINKER_SCRIPTS = linker_scripts/hardware_regs.ld linker_scripts/libultra_syms.ld
@@ -114,10 +111,12 @@ LDFLAGS        = -T $(LD_SCRIPT) -Map $(TARGET).map \
 
 # Files
 
+rwildcard = $(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
+
 ASM_S_FILES := $(foreach dir,$(ASM_DIRS),$(wildcard $(dir)/*.s))
 ASM_O_FILES := $(patsubst %.s,$(BUILD_DIR)/%.o,$(ASM_S_FILES))
 
-C_FILES     := $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.c))
+C_FILES     := $(foreach dir,$(SRC_DIRS),$(call rwildcard,$(dir),*.c))
 C_O_FILES   := $(patsubst %.c,$(BUILD_DIR)/%.o,$(C_FILES))
 
 BIN_FILES   := $(foreach dir,$(BIN_DIRS),$(wildcard $(dir)/*.bin))

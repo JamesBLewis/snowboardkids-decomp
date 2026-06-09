@@ -1,3 +1,4 @@
+#define _FINALROM
 #include "PRinternal/macros.h"
 #include "PR/os_internal.h"
 #include "PR/ultraerror.h"
