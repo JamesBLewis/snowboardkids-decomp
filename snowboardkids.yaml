@@ -168,7 +168,7 @@ segments:
       - [0xA4E20, hasm, ultra/os/invaldcache]
       - [0xA4ED0, c, ultra/io/pidma]
       - [0xA4FE0, c, ultra/io/visetspecial]
-      - [0xA51A0, asm] # ultra:vimgr.c
+      - [0xA51A0, c, ultra/io/vimgr]
       - [0xA5500, c, ultra/io/visetmode]
       - [0xA5570, c, ultra/io/visetevent]
       - [0xA55E0, hasm, ultra/os/writebackdcacheall]
@@ -268,7 +268,8 @@ segments:
       - [0xB1C00, data]
       - [0xDFED0, .data, ultra/os/initialize]
       - [0xDFEF0, .data, ultra/io/pimgr]
-      - [0xDFF20, data]
+      - [0xDFF20, .data, ultra/io/vimgr]
+      - [0xDFF40, data]
       - [0xE0C70, .data, ultra/io/aisetnextbuf]
       - [0xE0C80, data]
       - [0xE0CA0, .data, ultra/io/siacs]
@@ -340,7 +341,8 @@ segments:
       - { type: bss, name: bss_chunk_b, vram: 0x8015CA00 }
       - { type: .bss, name: ultra/os/initialize, vram: 0x8015CCD0 }
       - { type: .bss, name: ultra/io/pimgr, vram: 0x8015CCE0 }
-      - { type: bss, name: bss_chunk_c, vram: 0x8015DEB0 }
+      - { type: .bss, name: ultra/io/vimgr, vram: 0x8015DEB0 }
+      - { type: bss, name: bss_chunk_c, vram: 0x8015F0D0 }
       - { type: .bss, name: ultra/io/siacs, vram: 0x8015F110 }
       - { type: .bss, name: ultra/io/pfsisplug, vram: 0x8015F130 }
       - { type: .bss, name: ultra/io/cartrominit, vram: 0x8015F170 }

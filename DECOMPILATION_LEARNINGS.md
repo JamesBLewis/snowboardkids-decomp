@@ -12,6 +12,12 @@ Record project-specific compiler behavior, matching patterns, and verified struc
 - **`_bcopy` (not `bcopy`)** is the actual linker symbol for the memory copy function. The header declares `bcopy` but the linked symbol is `_bcopy`.
 - **`PRinternal/osint.h`** provides the prototype for `__osSpDeviceBusy` and other internal functions, eliminating "anonymous function" warnings.
 
+## ultra:vimgr.c (0xA51A0)
+
+- **Matches directly from upstream at -O1.** The text range `0xA51A0..0xA5500` is `osCreateViManager` plus the static VI manager main loop, with padding before `osViSetMode`.
+- **Owns a small `.data` and large `.bss` block.** `__osViDevMgr` is `.data` at ROM `0xDFF20` / VRAM `0x800DF320` with emitted size `0x20`. The file's `.bss` is `0x8015DEB0..0x8015F0D0`; the following `tmp_task` at `0x8015F0D0` belongs to the existing raw BSS tail, not `vimgr.c`.
+- **Verify generated data labels before trusting old symbol names.** A previous `__osViDevMgr` symbol pointed at `0x800DCCBC`, which is nonzero game data. The actual VI manager data is the zeroed `OSDevMgr` accessed by `osCreateViManager` at `0x800DF320`.
+
 ## ultra:pimgr.c (0xA4AE0)
 
 - **Defining data locally vs extern changes IDO codegen.** With `OSDevMgr __osPiDevMgr = { 0 }` defined locally, IDO keeps the base register (`at`) alive across multiple struct field stores, producing compact code. With `extern OSDevMgr __osPiDevMgr`, the compiler reloads `at` before each store, adding 4 extra instructions and breaking the match.
