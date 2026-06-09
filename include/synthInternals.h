@@ -58,6 +58,19 @@ typedef struct ALParam_s {
     } yetstillmoredata;
 } ALParam;
 
+typedef struct {
+    struct ALParam_s            *next;
+    s32                         delta;
+    s16                         type;
+    s16                         unity;
+    f32                         pitch;
+    s16                         volume;
+    ALPan                       pan;
+    u8                          fxMix;
+    s32                         samples;
+    struct ALWaveTable_s        *wave;
+} ALStartParamAlt;
+
 typedef Acmd *(*ALCmdHandler)(void *, s16 *, s32, s32, Acmd *);
 typedef s32   (*ALSetParam)(void *, s32, void *);
 
@@ -86,6 +99,13 @@ typedef struct {
     ALWaveTable         *wave;
 } ALStartParam;
 
+typedef struct {
+    struct ALParam_s    *next;
+    s32                 delta;
+    s16                 type;
+    struct PVoice_s     *pvoice;
+} ALFreeParam;
+
 typedef struct ALSave_s {
     ALFilter            filter;
     s32                 dramout;
@@ -112,6 +132,34 @@ typedef struct ALResampler_s {
     ALParam             *ctrlTail;
     s32                 motion;
 } ALResampler;
+
+typedef struct ALEnvMixer_s {
+    ALFilter            filter;
+    ENVMIX_STATE        *state;
+    s16                 pan;
+    s16                 volume;
+    s16                 cvolL;
+    s16                 cvolR;
+    s16                 dryamt;
+    s16                 wetamt;
+    u16                 lratl;
+    s16                 lratm;
+    s16                 ltgt;
+    u16                 rratl;
+    s16                 rratm;
+    s16                 rtgt;
+    s32                 delta;
+    s32                 segEnd;
+    s32                 first;
+    ALParam             *ctrlList;
+    ALParam             *ctrlTail;
+    ALFilter            **sources;
+    s32                 motion;
+} ALEnvMixer;
+
+void alEnvmixerNew(ALEnvMixer *e, ALHeap *hp);
+Acmd *alEnvmixerPull(void *f, s16 *outp, s32 out, s32 sampleOffset, Acmd *p);
+s32 alEnvmixerParam(void *filter, s32 paramID, void *param);
 
 typedef struct {
     s16                 fc;

@@ -275,6 +275,12 @@ The `0xB0B70` range is upstream `audio/reverb.c`, but it only matches with the l
 
 This repo's asm-processor rejects `-O3` because of function reordering, so `reverb.o` needs target-specific variables like `xprintf.o`: set `C_OPT = -O3`, add the audio include path, and set `IDO_CC = $(CC)` so the normal pattern recipe invokes IDO directly. Reverb owns `.rodata` at `0xE2AD0..0xE2B00`; it does not own `.data`, and the following VI mode data must remain at `0xE10B0`.
 
+## env.c Uses libultra 2.0I Audio O3
+
+The true `audio/env.c` text scope is `0xAE460..0xAF0C0`: `_ldexpf`, `_frexpf`, `alEnvmixerParam`, the static `_getRate`, static `_pullSubFrame`, static `_getVol`, and `alEnvmixerPull`. The file also owns `.data` at `0xE0F40..0xE1080` and `.rodata` at `0xE2A10..0xE2A70`.
+
+Use the upstream libultra source order, not ROM order. Under direct IDO `-O3`, the compiler reorders the object into the target ROM order and emits the private static calling convention used by `_getRate` and `_getVol`. At local audio `-O2`, the object preserves source order and does not match. The asm-processor cannot compile `-O3`, so `env.o` needs `C_OPT = -O3` and `IDO_CC = $(IDO_DIRECT)`.
+
 ## Some libmus Comments Are Libultra Tail Labels
 
 The `libmus:player_api.c` comments at `0xAB490` and `0xABE50`, and the `libmus:timerintr.c` comment at `0xABFD0`, are not libmus source ranges. They are libultra code where spimdisasm previously found misleading labels inside function tails:

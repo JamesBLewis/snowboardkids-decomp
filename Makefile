@@ -85,6 +85,8 @@ RM_MDEBUG    = $(OBJCOPY) --remove-section .mdebug $@
 
 $(BUILD_DIR)/src/ultra/io/%.o: C_OPT = -O1
 $(BUILD_DIR)/src/ultra/audio/%.o: C_OPT = -O2
+$(BUILD_DIR)/src/ultra/audio/env.o: C_OPT = -O3
+$(BUILD_DIR)/src/ultra/audio/env.o: IDO_CC = $(IDO_DIRECT)
 $(BUILD_DIR)/src/ultra/audio/reverb.o: C_OPT = -O3
 $(BUILD_DIR)/src/ultra/audio/reverb.o: IDO_CC = $(IDO_DIRECT)
 $(BUILD_DIR)/src/ultra/os/%.o: C_OPT = -O1

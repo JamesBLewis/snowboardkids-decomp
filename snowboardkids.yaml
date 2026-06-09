@@ -248,8 +248,8 @@ segments:
       - [0xAD4C0, c, ultra/audio/mainbus]
       - [0xAD610, asm] # ultra:load.c
       - [0xAE160, asm] # ultra:resample.c
-      - [0xAE460, asm] # ultra:env.c
-      - [0xAF0C0, asm] # ultra:auxbus.c
+      - [0xAE460, c, ultra/audio/env]
+      - [0xAF0C0, asm,  ultra/audio/auxbus]
       - [0xAF1D0, c, ultra/audio/save]
       - [0xAF290, c, ultra/io/si]
       - [0xAF2C0, c, ultra/io/leointerrupt]
@@ -283,6 +283,7 @@ segments:
       - [0xE0D30, data]
       - [0xE0DA0, .data, ultra/os/timerintr]
       - [0xE0DB0, data]
+      - [0xE0F40, .data, ultra/audio/env]
       - [0xE1080, .data, ultra/libc/xlitob]
       - [0xE10B0, data]
       - [0xE11A0, .rodata, 1050]
@@ -341,7 +342,7 @@ segments:
       - [0xE2980, .rodata, ultra/io/devmgr]
       - [0xE29A0, rodata]
       - [0xE29D0, rodata]
-      - [0xE2A10, rodata]
+      - [0xE2A10, .rodata, ultra/audio/env]
       - [0xE2A70, .rodata, ultra/libc/xldtob]
       - [0xE2AD0, .rodata, ultra/audio/reverb]
       - [0xE2B00, rodata]
