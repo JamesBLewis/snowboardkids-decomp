@@ -270,3 +270,9 @@ The target `audio/save.c` range at `0xAF1D0` is ordered `alSaveParam` first, the
 ## syncprintf.c Cannot Be Split to Only osSyncPrintf
 
 The `ultra:syncprintf.c` comment on the large `0x464E0` raw segment is misleading: `osSyncPrintf` is only the tiny final-ROM stub at `0x49A4C..0x49A60`, surrounded by unrelated/raw functions. Compiling an empty variadic `osSyncPrintf` with `-O1` emits the exact 0x14-byte instruction sequence, but the C object's `.text` section pads to 0x20. Splitting only `0x49A4C..0x49A60` shifts the following raw function at `0x49A60`; convert the following function too or leave this range raw.
+
+## reverb.c Uses libultra 2.0I Audio O3
+
+The `0xB0B70` range is upstream `audio/reverb.c`, but it only matches with the libultra 2.0I audio `-O3` build. At `-O2`, IDO keeps `_filterBuffer`'s low-pass pointer in `$s0`, shifts `_loadBuffer`/`_saveBuffer`, and emits the wrong function boundaries. The matching object orders the internal helpers as `_doModFunc`, `_filterBuffer`, `_saveBuffer`, `_loadBuffer`, `_loadOutputBuffer`, `alFxParamHdl`, `alFxParam`, `alFxPull`.
+
+This repo's asm-processor rejects `-O3` because of function reordering, so `reverb.o` needs target-specific variables like `xprintf.o`: set `C_OPT = -O3`, add the audio include path, and set `IDO_CC = $(CC)` so the normal pattern recipe invokes IDO directly. Reverb owns `.rodata` at `0xE2AD0..0xE2B00`; it does not own `.data`, and the following VI mode data must remain at `0xE10B0`.

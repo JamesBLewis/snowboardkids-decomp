@@ -1,6 +1,7 @@
 #ifndef __SYNTH_INTERNALS__
 #define __SYNTH_INTERNALS__
 
+#include <PR/abi.h>
 #include <PR/libaudio.h>
 
 #define AL_MAX_RSP_SAMPLES 160
@@ -97,6 +98,65 @@ typedef struct ALMainBus_s {
     s32                 maxSources;
     ALFilter            **sources;
 } ALMainBus;
+
+void alFilterNew(ALFilter *f, ALCmdHandler h, ALSetParam s, s32 type);
+
+typedef struct ALResampler_s {
+    ALFilter            filter;
+    RESAMPLE_STATE      *state;
+    f32                 ratio;
+    s32                 upitch;
+    f32                 delta;
+    s32                 first;
+    ALParam             *ctrlList;
+    ALParam             *ctrlTail;
+    s32                 motion;
+} ALResampler;
+
+typedef struct {
+    s16                 fc;
+    s16                 fgain;
+    union {
+        s16             fccoef[16];
+        s64             force_aligned;
+    } fcvec;
+    POLEF_STATE         *fstate;
+    s32                 first;
+} ALLowPass;
+
+typedef struct {
+    u32                 input;
+    u32                 output;
+    s16                 ffcoef;
+    s16                 fbcoef;
+    s16                 gain;
+    f32                 rsinc;
+    f32                 rsval;
+    s32                 rsdelta;
+    f32                 rsgain;
+    ALLowPass           *lp;
+    ALResampler         *rs;
+} ALDelay;
+
+typedef s32 (*ALSetFXParam)(void *, s32, void *);
+
+typedef struct {
+    ALFilter            filter;
+    s16                 *base;
+    s16                 *input;
+    u32                 length;
+    ALDelay             *delay;
+    u8                  section_count;
+    ALSetFXParam        paramHdl;
+} ALFx;
+
+void alFxNew(ALFx *r, ALSynConfig *c, ALHeap *hp);
+Acmd *alFxPull(void *f, s16 *outp, s32 out, s32 sampleOffset, Acmd *p);
+s32 alFxParam(void *filter, s32 paramID, void *param);
+s32 alFxParamHdl(void *filter, s32 paramID, void *param);
+
+#define _init_lpfilter init_lpfilter
+void _init_lpfilter(ALLowPass *lp);
 
 ALParam *__allocParam(void);
 s32 _timeToSamples(ALSynth *synth, s32 micros);

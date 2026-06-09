@@ -82,6 +82,10 @@ RM_MDEBUG    = $(OBJCOPY) --remove-section .mdebug $@
 
 $(BUILD_DIR)/src/ultra/io/%.o: C_OPT = -O1
 $(BUILD_DIR)/src/ultra/audio/%.o: C_OPT = -O2
+$(BUILD_DIR)/src/ultra/audio/reverb.o: C_OPT = -O3
+$(BUILD_DIR)/src/ultra/audio/reverb.o: CFLAGS += -Isrc/ultra/audio
+$(BUILD_DIR)/src/ultra/audio/reverb.o: IDO_CC = $(CC)
+$(BUILD_DIR)/src/ultra/audio/reverb.o: src/ultra/audio/reverb.c
 $(BUILD_DIR)/src/ultra/os/%.o: C_OPT = -O1
 $(BUILD_DIR)/src/ultra/os/seteventmesg.o: CFLAGS += -D_FINALROM
 $(BUILD_DIR)/src/ultra/gu/%.o: C_OPT = -O2
@@ -158,6 +162,7 @@ $(BUILD_DIR)/src/ultra/libc/ll.o: src/ultra/libc/ll.c
 	$(V)$(IDO_CC) $(CFLAGS) $(C_OPT) -o $@ $<
 	$(V)$(PYTHON) $(TOOLS_DIR)/set_o32abi_bit.py $@
 	$(V)$(RM_MDEBUG)
+
 
 # *.bin -> *.o
 $(BUILD_DIR)/%.o: %.bin

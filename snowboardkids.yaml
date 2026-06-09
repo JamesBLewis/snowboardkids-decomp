@@ -261,7 +261,7 @@ segments:
       - [0xB0AF0, c, ultra/os/yieldthread]
       - [0xB0B40, asm]
       - [0xB0B50, asm]
-      - [0xB0B70, asm] # ultra:reverb.c
+      - [0xB0B70, c, ultra/audio/reverb]
       - [0xB17C0, asm]
       - [0xB1840, c, ultra/libc/ldiv]
       - [0xB19D0, asm, rspbootText]
@@ -338,7 +338,7 @@ segments:
       - [0xE29D0, rodata]
       - [0xE2A10, rodata]
       - [0xE2A70, rodata]
-      - [0xE2AD0, rodata]
+      - [0xE2AD0, .rodata, ultra/audio/reverb]
       - [0xE2B00, rodata]
       - { type: bss, name: bss_chunk_a, vram: 0x800E29C0 }
       - { type: .bss, name: ultra/os/seteventmesg, vram: 0x8015C980 }
