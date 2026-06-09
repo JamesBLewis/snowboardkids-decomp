@@ -93,6 +93,9 @@ $(BUILD_DIR)/src/ultra/io/sptask.o: CFLAGS += -DF3DEX_GBI
 
 $(BUILD_DIR)/src/ultra/libc/ll.o: C_OPT = -O1
 $(BUILD_DIR)/src/ultra/libc/ll.o: C_MIPS = -mips3 -32
+$(BUILD_DIR)/src/ultra/libc/xprintf.o: C_OPT = -O3
+$(BUILD_DIR)/src/ultra/libc/xprintf.o: CFLAGS += -Isrc/ultra/libc
+$(BUILD_DIR)/src/ultra/libc/xprintf.o: IDO_CC = $(CC)
 
 LD_SCRIPT      = $(BASENAME).ld
 LINKER_SCRIPTS = linker_scripts/hardware_regs.ld linker_scripts/libultra_syms.ld

@@ -249,9 +249,9 @@ The `ultra:pfschecker.c` comment at `0xA9450` covers too much text. Upstream `io
 
 ## xprintf.c Has Split Text but Shared Raw Rodata
 
-The raw helper at `0xA9EB0` is `_Putfld`, not part of `pfschecker.c`; `_Printf` starts at `0xAA520`. A direct C port of `_Printf` can get the text size, `.data`, and raw rodata placement close, but the current source shape still differs by register allocation around the width subtraction/padding blocks, so leave `0xAA520` raw for now.
+The raw helper at `0xA9EB0` is `_Putfld`, not part of `pfschecker.c`; `_Printf` starts at `0xAA520`. Match the whole text range `0xA9EB0..0xAAB70` as `src/ultra/libc/xprintf.c`, not as two separate text segments. This file needs the upstream libultra `-O3` libc settings: at `-O2`, IDO emits `_Printf` first and shifts the following code by `0x20`; with scoped `-O3`, `_Putfld` is emitted first and `_Printf` lands at `0x800A9920`.
 
-The `0xE2830..0xE2930` rodata must remain one raw object: it contains `_Printf`'s `hlL`, flag-character, and flag-bit tables at `0xE2830..0xE2854`, immediately followed by `_Putfld`'s jump table at `0xE2854`. Splitting those into separate YAML rodata segments inserts linker `SUBALIGN(16)` fill before `E2854` and shifts the jump table to `0xE2860`.
+`xprintf.c` owns `.data` at `0xE0CD0..0xE0D20` and `.rodata` at `0xE2830..0xE2930`. The rodata contains `_Printf`'s `hlL`, flag-character, and flag-bit tables at `0xE2830..0xE2854`, immediately followed by `_Putfld`'s jump table at `0xE2854`, so keep it as one `.rodata, ultra/libc/xprintf` object rather than trying to split the tables.
 
 ## contramread.c and contramwrite.c Use VERSION_I Pack Helpers With Clear Loops
 
