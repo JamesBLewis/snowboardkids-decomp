@@ -91,6 +91,13 @@ typedef struct ALSave_s {
     s32                 first;
 } ALSave;
 
+typedef struct ALMainBus_s {
+    ALFilter            filter;
+    s32                 sourceCount;
+    s32                 maxSources;
+    ALFilter            **sources;
+} ALMainBus;
+
 ALParam *__allocParam(void);
 s32 _timeToSamples(ALSynth *synth, s32 micros);
 
