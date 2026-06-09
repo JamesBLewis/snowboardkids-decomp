@@ -1,0 +1,110 @@
+SystemID N64
+0D4000	w	u	1	RDRAM	Time (handles next item)
+0D4000	d	u	1	RDRAM	Time (handles next item)
+12201C	w	h	1	RDRAM	
+0D4000	d	b	1	RDRAM	Time (handles next item)
+122298	b	h	1	RDRAM	Next Item
+122EB0	b	h	1	RDRAM	Next Item (enemy1
+1228A4	b	h	1	RDRAM	Next Item (enemy 2)
+1234BC	b	h	1	RDRAM	Next Item (enemy 3)
+122EAD	b	u	1	RDRAM	Blue item enemy 1
+1228A1	b	s	1	RDRAM	BLUE ENEMY 2
+1234B9	b	u	1	RDRAM	Enemy 3 blue item
+122295	b	u	1	RDRAM	Blue Item
+122294	b	u	1	RDRAM	Red Item Quantity
+122292	b	u	1	RDRAM	Red item
+122293	b	u	1	RDRAM	Red Box timer to pop
+122296	b	u	1	RDRAM	Blue Box timer
+1222EB	b	u	1	RDRAM	Coins in race
+1222EF	b	u	1	RDRAM	Coins in race
+121D8C	d	s	1	RDRAM	Coins in Menu
+122283	b	h	1	RDRAM	Height Maybe
+12238D	b	h	1	RDRAM	weird computer logic
+122289	b	h	1	RDRAM	Place indicator
+122288	b	h	1	RDRAM	Lap No
+122270	b	h	1	RDRAM	Potentially Y position on map
+122096	b	h	1	RDRAM	does somehting when crashing
+121DFF	b	h	1	RDRAM	Getting up logic? weird if freeze
+120B30	b	h	1	RDRAM	Ticks
+120900	b	h	1	RDRAM	More ticks
+112270	d	u	1	RDRAM	Camera Spin (end)
+121D85	b	u	1	RDRAM	Character ID
+121B51	b	u	1	RDRAM	Level
+0EC9C2	b	u	1	RDRAM	Game Mode
+0EC9D0	w	u	1	RDRAM	Board Sub Selection
+12201C	w	u	1	RDRAM	Speedish
+1212C0	b	h	1	RDRAM	Related to Pans
+1223B2	b	h	1	RDRAM	Enemy 1 position?
+1223A9	b	h	1	RDRAM	also enemy position
+1223C2	b	h	1	RDRAM	Sideways spazzing
+1229B5	b	h	1	RDRAM	Enemy 2 position
+122FC1	b	h	1	RDRAM	Enemy 3 position
+122FC5	b	h	1	RDRAM	Enemy 3 collision
+122FC8	b	h	1	RDRAM	Enemy 3 item (also related)
+122FC9	b	h	1	RDRAM	Enemy 3 items
+122FD8	b	h	1	RDRAM	Enemy 3 items as well
+122FD9	b	h	1	RDRAM	Enemy 3 items
+122FDC	b	h	1	RDRAM	Enemy 3 items also
+122FE0	b	h	1	RDRAM	Enemy 3 items (so many)
+129F5E	b	h	1	RDRAM	
+122F00	d	u	1	RDRAM	enemy coins
+122F04	d	u	1	RDRAM	enemy coins
+12350C	d	u	1	RDRAM	enemy coins (enemy 3)
+123510	d	u	1	RDRAM	
+12327F	b	h	1	RDRAM	Enemy has item maybe
+12327D	b	h	1	RDRAM	ENEMY GHOST
+11D7AC	d	u	1	RDRAM	enemy ghost (diff player)
+0A09C0	d	h	1	RDRAM	
+10AE50	d	h	1	RDRAM	
+10AE54	d	h	1	RDRAM	
+10AE58	d	h	1	RDRAM	
+10AE5C	d	h	1	RDRAM	
+10AE60	d	h	1	RDRAM	
+04EEF4	b	u	1	RDRAM	
+04EEF4	b	u	1	RDRAM	
+04EEF4	b	u	1	RDRAM	
+0ECA22	b	u	1	RDRAM	
+0B3194	b	u	1	RDRAM	Cheat code (15 is on)
+0B3193	b	h	1	RDRAM	
+0EC400	b	u	1	RDRAM	
+11042C	d	u	1	RDRAM	
+0E2A14	d	u	1	RDRAM	
+11F108	d	u	1	RDRAM	
+121DA0	d	u	1	RDRAM	makes u fly
+121DB8	d	u	1	RDRAM	pulls you to ground/drag
+121DDC	d	u	1	RDRAM	handles bonk/collision
+121E4C	d	u	1	RDRAM	
+122070	d	u	1	RDRAM	related to forward momentum
+122070	b	u	1	RDRAM	related to forward momentum
+124D44	d	u	1	RDRAM	
+13D364	d	u	1	RDRAM	
+16449C	d	u	1	RDRAM	
+16C49C	d	u	1	RDRAM	
+122070	d	h	1	RDRAM	
+12206C	d	h	1	RDRAM	Messes with lift
+11221C	d	u	1	RDRAM	weird camera
+1121F0	d	u	1	RDRAM	
+122300	d	s	1	RDRAM	
+1121EC	d	u	1	RDRAM	
+121DA0	d	u	1	RDRAM	maybe height again
+121DAC	d	u	1	RDRAM	
+121DDC	d	u	1	RDRAM	
+121E20	d	u	1	RDRAM	
+122070	d	u	1	RDRAM	
+1221E8	d	u	1	RDRAM	
+12206C	d	u	1	RDRAM	SIDEWAYS 
+12206C	b	u	1	RDRAM	SIDEWAYS 
+12206E	b	h	1	RDRAM	crash animation
+12207A	b	h	1	RDRAM	could be trick animation
+12205A	b	h	1	RDRAM	forward?
+122058	b	h	1	RDRAM	
+12205B	b	h	1	RDRAM	fan
+122059	b	h	1	RDRAM	
+122075	b	h	1	RDRAM	
+122075	b	u	1	RDRAM	
+121DC1	b	u	1	RDRAM	
+121DF4	b	u	1	RDRAM	weird drag movement
+121FD4	b	u	1	RDRAM	
+121FE0	b	h	1	RDRAM	
+122059	b	u	1	RDRAM	ghosts?
+12206B	b	h	1	RDRAM	
