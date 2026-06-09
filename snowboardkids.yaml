@@ -118,7 +118,7 @@ segments:
       - [0x6E120, asm]
       - [0x710F0, asm]
       - [0x71AC0, asm]
-      - [0x72430, asm] # libmus:player_api.c
+      - [0x72430, asm] # game audio wrappers around libmus APIs
       - [0x73830, asm]
       - [0x78E50, asm]
       - [0x79030, asm]
@@ -222,13 +222,15 @@ segments:
       - [0xAB200, hasm, ultra/libc/bzero]
       - [0xAB2A0, c, ultra/io/cartrominit]
       - [0xAB390, c, ultra/io/leodiskinit]
-      - [0xAB490, asm] # libmus:player_api.c
+      - [0xAB490, c, ultra/io/piacs]
+      - [0xAB550, c, ultra/os/getthreadpri]
       - [0xAB570, c, ultra/io/pirawdma]
       - [0xAB650, c, ultra/io/epirawdma]
       - [0xAB880, c, ultra/io/devmgr]
       - [0xABD10, asm]
-      - [0xABE50, asm] # libmus:player_api.c
-      - [0xABFD0, asm] # libmus:timerintr.c
+      - [0xABE50, c, ultra/os/jammesg]
+      - [0xABFA0, c, ultra/io/pigetcmdq]
+      - [0xABFD0, c, ultra/os/timerintr]
       - [0xAC3D0, c, ultra/io/vigetcurrcontext]
       - [0xAC3E0, asm]
       - [0xAC740, hasm, ultra/os/getcount]
@@ -277,7 +279,10 @@ segments:
       - [0xE0CA0, .data, ultra/io/siacs]
       - [0xE0CB0, data]
       - [0xE0CD0, .data, ultra/libc/xprintf]
-      - [0xE0D20, data]
+      - [0xE0D20, .data, ultra/io/piacs]
+      - [0xE0D30, data]
+      - [0xE0DA0, .data, ultra/os/timerintr]
+      - [0xE0DB0, data]
       - [0xE1080, .data, ultra/libc/xlitob]
       - [0xE10B0, data]
       - [0xE11A0, .rodata, 1050]
@@ -351,7 +356,9 @@ segments:
       - { type: .bss, name: ultra/io/pfsisplug, vram: 0x8015F130 }
       - { type: .bss, name: ultra/io/cartrominit, vram: 0x8015F170 }
       - { type: .bss, name: ultra/io/leodiskinit, vram: 0x8015F1F0 }
-      - { type: bss, name: bss_chunk_d, vram: 0x8015F270 }
+      - { type: .bss, name: ultra/io/piacs, vram: 0x8015F270 }
+      - { type: .bss, name: ultra/os/timerintr, vram: 0x8015F290 }
+      - { type: bss, name: bss_chunk_e, vram: 0x8015F2D0 }
       - { type: .bss, name: ultra/io/leointerrupt, vram: 0x8015F480 }
 
   - type: bin

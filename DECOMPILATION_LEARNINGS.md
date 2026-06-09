@@ -274,3 +274,13 @@ The `ultra:syncprintf.c` comment on the large `0x464E0` raw segment is misleadin
 The `0xB0B70` range is upstream `audio/reverb.c`, but it only matches with the libultra 2.0I audio `-O3` build. At `-O2`, IDO keeps `_filterBuffer`'s low-pass pointer in `$s0`, shifts `_loadBuffer`/`_saveBuffer`, and emits the wrong function boundaries. The matching object orders the internal helpers as `_doModFunc`, `_filterBuffer`, `_saveBuffer`, `_loadBuffer`, `_loadOutputBuffer`, `alFxParamHdl`, `alFxParam`, `alFxPull`.
 
 This repo's asm-processor rejects `-O3` because of function reordering, so `reverb.o` needs target-specific variables like `xprintf.o`: set `C_OPT = -O3`, add the audio include path, and set `IDO_CC = $(CC)` so the normal pattern recipe invokes IDO directly. Reverb owns `.rodata` at `0xE2AD0..0xE2B00`; it does not own `.data`, and the following VI mode data must remain at `0xE10B0`.
+
+## Some libmus Comments Are Libultra Tail Labels
+
+The `libmus:player_api.c` comments at `0xAB490` and `0xABE50`, and the `libmus:timerintr.c` comment at `0xABFD0`, are not libmus source ranges. They are libultra code where spimdisasm previously found misleading labels inside function tails:
+
+- `0xAB490..0xAB570` is `io/piacs.c` followed by `os/getthreadpri.c`; the old `MusFxBankNumberOfEffects` label was the `thread->priority` return tail of `osGetThreadPri`.
+- `0xABE50..0xABFD0` is `os/jammesg.c` followed by `io/pigetcmdq.c`; the old `MusPtrBankGetCurrent` label was the `__osPiDevMgr.cmdQueue` return tail of `osPiGetCmdQueue`.
+- `0xABFD0..0xAC3D0` is `os/timerintr.c`, not libmus. It owns `__osTimerList` data at `0xE0DA0..0xE0DB0` and timer BSS at `0x8015F290..0x8015F2D0`.
+
+For `timerintr.c`, keep the upstream `for (; timep != __osTimerList && tim > timep->value; timep = timep->next)` loop in `__osInsertTimer`. Rewriting it as an equivalent `while` loop emits two extra instructions under IDO, grows `.text` from the target `0x400` to `0x410`, and shifts the main data/BSS VMAs.

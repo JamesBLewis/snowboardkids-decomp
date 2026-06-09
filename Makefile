@@ -88,6 +88,7 @@ $(BUILD_DIR)/src/ultra/audio/%.o: C_OPT = -O2
 $(BUILD_DIR)/src/ultra/audio/reverb.o: C_OPT = -O3
 $(BUILD_DIR)/src/ultra/audio/reverb.o: IDO_CC = $(IDO_DIRECT)
 $(BUILD_DIR)/src/ultra/os/%.o: C_OPT = -O1
+$(BUILD_DIR)/src/ultra/os/timerintr.o: CFLAGS += -D_FINALROM
 $(BUILD_DIR)/src/ultra/gu/%.o: C_OPT = -O2
 $(BUILD_DIR)/src/ultra/gu/perspective.o: C_OPT = -O2
 
