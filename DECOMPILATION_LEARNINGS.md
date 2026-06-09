@@ -183,9 +183,53 @@ The range commented `ultra:pirawdma.c` at `0xAB570` contains two source files: `
 
 The VERSION_I upstream `io/cartrominit.c` and `io/leodiskinit.c` are close, but this target does not emit `CartRomHandle.speed = 0` or `LeoDiskHandle.speed = 0`. Leaving those stores in makes the combined text 0x10 bytes too long, which shifts all following text/data/BSS addresses and creates misleading downstream diffs. Use `_bzero` rather than upstream `bzero`, matching this repo's real libc label. The handle BSS objects have `OSPiHandle` size `0x74` and object padding to `0x80`; `__osDiskHandle` sits at `LeoDiskHandle + 0x74` (`0x8015F264`), and the following raw BSS resumes at `0x8015F270`.
 
+## leointerrupt.c Matches Upstream and Owns leoDiskStack
+
+`io/leointerrupt.c` matches upstream VERSION_I source directly at `0xAF2C0`. Its `leoDiskStack[OS_PIM_STACKSIZE]` definition emits a 0x1000-byte BSS object at `0x8015F480`, so split `bss_chunk_d` before that address and add `.bss, ultra/io/leointerrupt`. Once the whole text range is C, remove the old `0x700AED64` / `0x700AEE4C` helper placeholders; they are static helpers inside the C object.
+
 ## devmgr.c Ends Before the VI Initializer
 
 The `ultra:devmgr.c` range starts at `0xAB880`, but only `__osDevMgrMain` belongs to `io/devmgr.c`; it ends at `0xABD10`. The following `func_800AB110` is a separate VI initialization helper and should remain raw until identified. `devmgr.c` also owns the switch jump table rodata at `0xE2980`. Convert its callable `0x700...` placeholders (`__osResetGlobalIntMask`, `osEPiRawWriteIo`, `osEPiRawReadIo`, `__osSetGlobalIntMask`, `osYieldThread`) to real `0x800...` runtime addresses before linking the source.
+
+## Late OS/PI Helpers Use Small VERSION_I Bodies
+
+`resetglobalintmask.c`, `setglobalintmask.c`, and `yieldthread.c` match upstream directly at `-O1`. The target `epirawwrite.c` and `epirawread.c` do not use upstream's `EPI_SYNC` handle-domain logic or the `assert(data != NULL)` include; they only `WAIT_ON_IOBUSY(stat)`, then access `pihandle->baseAddress | devAddr`. Keeping `EPI_SYNC` makes each object much larger and shifts `__OSGlobalIntMask`, `__osRunQueue`, and `__osRunningThread` references in every following function.
+
+## ldiv.c Uses Target Function Order
+
+The upstream `libc/ldiv.c` source lists `ldiv` before `lldiv`, but the ROM range at `0xB1840` is `lldiv` first, then `ldiv` at `0xB1940`. Port the same bodies in target order. This repo does not include the compiler-specific upstream `stdlib.h`, so local `ldiv_t` and `lldiv_t` typedefs are enough for this isolated file.
+
+## destroythread.c Matches the VERSION_I Queue Walk
+
+`osDestroyThread` at `0xAFB40` matches upstream `os/destroythread.c` at `-O1` using the VERSION_I/GCC active-queue walk: initialize `pred = __osActiveQueue`, `succ = pred->tlnext`, and loop while `succ != NULL`. This emits a 0x100-byte text section including padding through `0xAFC40`, exactly before `ultra/libc/xlitob`.
+
+## probetlb.s Matches Upstream Handwritten Assembly
+
+`__osProbeTLB` at `0xACB90` is a direct handwritten-asm match for upstream `os/probetlb.s`. Add it as `hasm, ultra/os/probetlb`; the upstream `LEAF`/`END` source emits the target 0xB8-byte section including the final padding nops.
+
+## exceptasm.s Matches as VERSION_I Handwritten Text
+
+`os/exceptasm.s` matches the full `0xA70D0..0xA79E0` text range as a `hasm` segment, including `__osExceptionPreamble`, `__osException`, `send_mesg`, `handle_CpU`, queue helpers, dispatch, and cleanup. Keep `send_mesg` as a real runtime symbol at `0x800A6A14` so callers and regenerated asm do not use `func_800A6A14`.
+
+The source object emits exactly `0x910` bytes of `.text` and no owned `.data`/`.rodata`. Leave the `0xE27E0` rodata as raw: it contains the interrupt offset table and jump table used by the exception handler, and it already sits correctly before the raw xprintf rodata.
+
+## synallocvoice.s Needs a Single Text Object
+
+The target order is `_allocatePVoice` followed by `alSynAllocVoice` at `0xA5BD0..0xA5E00`. A direct C port of `alSynAllocVoice` matches its instructions, but splitting it into its own C segment at `0xA5CB8` is not viable because the C object's 16-byte text alignment shifts it to `0xA5CC0`.
+
+`_allocatePVoice` also differs under the local audio `-O2` flags: IDO keeps `drvr` in `$s0`, while the ROM spills caller-saved `$t0` around `alUnlink` and `alLink`. Keep this file as one `hasm` text object with real libultra labels until the exact compiler/source conditions for the allocator are identified.
+
+## sl.c Starts Before Its Comment and Owns alGlobals Data
+
+The `ultra:sl.c` comment begins at `0xA64C0`, but the upstream source starts one segment earlier with `alUnlink` at `0xA6490`. Match the whole text range `0xA6490..0xA6550` as `audio/sl.c` in ROM order: `alUnlink`, `alLink`, `alClose`, then `alInit`.
+
+`sl.c` owns `alGlobals` at `0x800E0060`, emitted as a 0x10-byte `.data` object at `0xE0C60`. Split the raw `DFF40` data before that address and keep `alGlobals` in `symbol_addrs.txt` so neighboring raw audio segments regenerate references to the real source-owned symbol instead of `D_800E0060`. Convert `alSynNew` and `alSynDelete` placeholders to their runtime addresses when linking the source.
+
+## resample.c Direct Port Is 0x10 Bytes Short
+
+The target `audio/resample.c` range is `alResampleParam` then `alResamplePull` at `0xAE160..0xAE460`, with rodata at ROM `0xE29D0..0xE2A10` (VMA `0x800E1DD0..0x800E1E10`). Do not split by the VMA-looking `0xE1DD0`; that belongs to unrelated game rodata.
+
+A direct upstream-style C port gets `alResampleParam` close but emits a `0x2F0` text section instead of the target `0x300`. `alResamplePull` uses `$s0`-`$s2` under the local audio `-O2` path, while the ROM uses caller-saved `$t0`-`$t2` and explicit stack spills. Leave the segment raw until the exact source shape or flags produce the 0x300-byte text section.
 
 ## xlitob.c Owns 0x30 Bytes of .data
 
@@ -198,6 +242,20 @@ The neighboring `xldtob.c` comment begins at `0xAFEE0`, but that range starts wi
 ## pfsgetstatus.c Reuses pfsisplug Helpers
 
 The target `io/pfsgetstatus.c` at `0xA85E0` does not match upstream's one-channel request helper path. It calls `__osPfsRequestData(CONT_CMD_REQUEST_STATUS)` and `__osPfsGetInitData`, both already emitted by `pfsisplug.c`, then indexes the returned `OSContStatus data[MAXCONTROLLERS]` by channel. Matching the target body directly is cleaner than porting upstream `__osPfsRequestOneChannel` / `__osPfsGetOneChannelData`.
+
+## pfschecker.c Ends Before the xprintf Helper
+
+The `ultra:pfschecker.c` comment at `0xA9450` covers too much text. Upstream `io/pfschecker.c` matches only `osPfsChecker`, `corrupted_init`, and `corrupted` through `0xA9EB0` with no emitted rodata. Keep a raw asm split at `0xA9EB0`; that tail helper is called by raw `xprintf` and uses labels referenced by the existing `E2830` rodata jump table.
+
+## xprintf.c Has Split Text but Shared Raw Rodata
+
+The raw helper at `0xA9EB0` is `_Putfld`, not part of `pfschecker.c`; `_Printf` starts at `0xAA520`. A direct C port of `_Printf` can get the text size, `.data`, and raw rodata placement close, but the current source shape still differs by register allocation around the width subtraction/padding blocks, so leave `0xAA520` raw for now.
+
+The `0xE2830..0xE2930` rodata must remain one raw object: it contains `_Printf`'s `hlL`, flag-character, and flag-bit tables at `0xE2830..0xE2854`, immediately followed by `_Putfld`'s jump table at `0xE2854`. Splitting those into separate YAML rodata segments inserts linker `SUBALIGN(16)` fill before `E2854` and shifts the jump table to `0xE2860`.
+
+## contramread.c and contramwrite.c Use VERSION_I Pack Helpers With Clear Loops
+
+The controller RAM segments at `0xA7ED0` and `0xA8250` match the VERSION_I split source shape: public `__osContRamWrite` / `__osContRamRead` functions plus static pack helpers. This ROM's pack helpers clear all 16 words of `__osPfsPifRam` before setting `pifstatus`, the same local drift seen in `__osPfsRequestData`. Keep the helper-local `ptr = (u8 *)__osPfsPifRam.ramarray;` before the clear loop; IDO still emits the target stack pointer setup and the checksum matches.
 
 ## contpfs.c Must Own the Whole Range
 

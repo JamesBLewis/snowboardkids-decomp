@@ -106,7 +106,7 @@ segments:
       - [0x437C0, asm]
       - [0x43CD0, asm]
       - [0x44550, asm]
-      - [0x464E0, asm] # ultra:syncprintf.c
+      - [0x464E0, asm]
       - [0x4A040, asm]
       - [0x4E760, asm]
       - [0x51BF0, asm]
@@ -180,7 +180,7 @@ segments:
       - [0xA5AE0, c, ultra/audio/heapinit]
       - [0xA5B20, asm]
       - [0xA5B80, c, ultra/audio/synaddplayer]
-      - [0xA5BD0, asm] # ultra:synallocvoice.c
+      - [0xA5BD0, hasm, ultra/audio/synallocvoice]
       - [0xA5E00, c, ultra/audio/synstopvoice]
       - [0xA5E80, c, ultra/audio/synstartvoice]
       - [0xA5F10, c, ultra/audio/synsetfxmix]
@@ -189,26 +189,26 @@ segments:
       - [0xA60E0, c, ultra/audio/synsetpitch]
       - [0xA6170, c, ultra/gu/sinf]
       - [0xA6330, c, ultra/io/aisetfreq]
-      - [0xA6490, asm]
-      - [0xA64C0, asm] # ultra:sl.c (guess)
+      - [0xA6490, c, ultra/audio/sl]
       - [0xA6550, c, ultra/os/virtualtophysical]
       - [0xA65D0, c, ultra/io/aisetnextbuf]
       - [0xA6680, c, ultra/io/aigetlen]
-      - [0xA6690, asm] # ultra:synthesizer.c (guess)
+      - [0xA6690, asm] # ultra:synthesizer.c
       - [0xA6DB0, hasm, ultra/os/interrupt]
       - [0xA6DF0, c, ultra/os/gettime]
       - [0xA6E80, c, ultra/os/settimer]
       - [0xA6F60, c, ultra/io/sirawdma]
       - [0xA7010, c, ultra/io/siacs]
-      - [0xA70D0, asm] # ultra:exceptasm.s
+      - [0xA70D0, hasm, ultra/os/exceptasm]
       - [0xA79E0, c, ultra/io/pfsisplug]
       - [0xA7D50, c, ultra/io/crc]
-      - [0xA7ED0, asm] # ultra:__osContRamWrite
-      - [0xA8250, asm] # ultra:__osContRamRead
+      - [0xA7ED0, c, ultra/io/contramwrite]
+      - [0xA8250, c, ultra/io/contramread]
       - [0xA85E0, c, ultra/io/pfsgetstatus]
       - [0xA86F0, c, ultra/io/contpfs]
-      - [0xA9450, asm] # ultra:pfschecker.c (guess)
-      - [0xAA520, asm] # ultra:xprintf.c (guess)
+      - [0xA9450, c, ultra/io/pfschecker]
+      - [0xA9EB0, asm]
+      - [0xAA520, asm] # ultra:xprintf.c
       - [0xAAB70, c, ultra/libc/string]
       - [0xAAC10, c, ultra/gu/mtxutil]
       - [0xAAE80, c, ultra/gu/cosf]
@@ -240,7 +240,7 @@ segments:
       - [0xACB40, c, ultra/io/sp]
       - [0xACB70, c, ultra/io/spgetstat]
       - [0xACB80, asm]
-      - [0xACB90, asm] # ultra:probetlb.s
+      - [0xACB90, hasm, ultra/os/probetlb]
       - [0xACC50, c, ultra/io/ai]
       - [0xACC80, asm]
       - [0xAD420, asm]
@@ -251,20 +251,20 @@ segments:
       - [0xAF0C0, asm] # ultra:auxbus.c
       - [0xAF1D0, c, ultra/audio/save]
       - [0xAF290, c, ultra/io/si]
-      - [0xAF2C0, asm] # ultra:leointerrupt.c
-      - [0xAFB40, asm] # ultra:destroythread.c
+      - [0xAF2C0, c, ultra/io/leointerrupt]
+      - [0xAFB40, c, ultra/os/destroythread]
       - [0xAFC40, c, ultra/libc/xlitob]
       - [0xAFEE0, asm] # ultra:xldtob.c
-      - [0xB09A0, asm] # ultra:resetglobalintmask.c
-      - [0xB0A00, asm] # ultra:epirawwrite.c
-      - [0xB0A50, asm] # ultra:epirawread.c
-      - [0xB0AA0, asm] # ultra:setglobalintmask.c
-      - [0xB0AF0, asm] # ultra:yieldthread.c
+      - [0xB09A0, c, ultra/os/resetglobalintmask]
+      - [0xB0A00, c, ultra/io/epirawwrite]
+      - [0xB0A50, c, ultra/io/epirawread]
+      - [0xB0AA0, c, ultra/os/setglobalintmask]
+      - [0xB0AF0, c, ultra/os/yieldthread]
       - [0xB0B40, asm]
       - [0xB0B50, asm]
-      - [0xB0B70, asm] # ultra:drvrnew.c
+      - [0xB0B70, asm] # ultra:reverb.c
       - [0xB17C0, asm]
-      - [0xB1840, asm] # ultra:ldiv.c
+      - [0xB1840, c, ultra/libc/ldiv]
       - [0xB19D0, asm, rspbootText]
       - [0xB1AA0, asm, aspMainTextStart]
       - [0xB1C00, data]
@@ -272,6 +272,7 @@ segments:
       - [0xDFEF0, .data, ultra/io/pimgr]
       - [0xDFF20, .data, ultra/io/vimgr]
       - [0xDFF40, data]
+      - [0xE0C60, .data, ultra/audio/sl]
       - [0xE0C70, .data, ultra/io/aisetnextbuf]
       - [0xE0C80, data]
       - [0xE0CA0, .data, ultra/io/siacs]
@@ -350,6 +351,7 @@ segments:
       - { type: .bss, name: ultra/io/cartrominit, vram: 0x8015F170 }
       - { type: .bss, name: ultra/io/leodiskinit, vram: 0x8015F1F0 }
       - { type: bss, name: bss_chunk_d, vram: 0x8015F270 }
+      - { type: .bss, name: ultra/io/leointerrupt, vram: 0x8015F480 }
 
   - type: bin
     start: 0xE35C0
