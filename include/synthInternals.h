@@ -17,6 +17,17 @@
 #define AL_AUX_R_OUT 2048
 
 enum {
+    AL_ADPCM,
+    AL_RESAMPLE,
+    AL_BUFFER,
+    AL_SAVE,
+    AL_ENVMIX,
+    AL_FX,
+    AL_AUXBUS,
+    AL_MAINBUS
+};
+
+enum {
     AL_FILTER_FREE_VOICE,
     AL_FILTER_SET_SOURCE,
     AL_FILTER_ADD_SOURCE,
@@ -137,6 +148,7 @@ typedef struct {
 } ALLoadFilter;
 
 void alLoadNew(ALLoadFilter *f, ALDMANew dma, ALHeap *hp);
+Acmd *alAdpcmPull(void *filter, s16 *outp, s32 outCount, s32 sampleOffset, Acmd *p);
 s32 alLoadParam(void *filter, s32 paramID, void *param);
 
 typedef struct ALResampler_s {
