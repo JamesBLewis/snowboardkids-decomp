@@ -2,307 +2,88 @@
 
 Record project-specific compiler behavior, matching patterns, and verified struct or data-layout insights here as they are discovered.
 
-## ultra:sptask.c (0xA5610)
+## IDO Optimization Levels
 
-- **Requires -O2, not -O1.** Despite being in `src/ultra/io/`, sptask.c needs `-O2` to match the target register allocation (callee-saved registers s0-s3 for variables surviving across calls). At `-O1`, the compiler uses stack slots instead, producing incorrect code.
-- **Requires `-DF3DEX_GBI`** to get `OS_YIELD_DATA_SIZE = 0xC00` (the F3DEX variant). Without it, the default `0x900` produces the wrong `IO_READ` offset (`0x8FC` vs `0xBFC`).
-- **`tmp_task` must be at BSS address `0x8015F0D0`.** The static BSS variable needs to be declared `extern` and placed via `symbol_addrs.txt` at its original address, since the linker's BSS layout doesn't match the original build order.
-- **Symbol addresses must be real VRAM (0x800...), not splat placeholders (0x700...).** Functions called by matched C source (`osVirtualToPhysical`, `__osSpSetStatus`, `__osSpSetPc`, `__osSpRawStartDma`, `__osSpDeviceBusy`, `__osSpGetStatus`) need their real 0x800... addresses in `symbol_addrs.txt` for the linker to resolve them. The 0x700... addresses only work for asm-to-asm references.
-- **Symbol renames propagate through extraction.** Changing names in `symbol_addrs.txt` (e.g., `func_800A5950` → `osVirtualToPhysical`) causes splat to regenerate asm files with the new labels during `make extract`. Manual asm file edits are overwritten.
-- **`_bcopy` (not `bcopy`)** is the actual linker symbol for the memory copy function. The header declares `bcopy` but the linked symbol is `_bcopy`.
-- **`PRinternal/osint.h`** provides the prototype for `__osSpDeviceBusy` and other internal functions, eliminating "anonymous function" warnings.
+- **Most ultra IO/OS files match at `-O1`.** Audio library files (`src/ultra/audio/`) and GU math files (`src/ultra/gu/`) often require `-O2`. Some complex audio files (`reverb.c`, `env.c`, `xprintf.c`, `xldtob.c`) require direct IDO `-O3` because the asm-processor rejects `-O3` due to function reordering.
+- **IDO `-O3` reorders functions within an object.** The compiler may emit functions in a different order than the source file. When matching `-O3` objects, the ROM function order is the authoritative order, not the upstream source order.
+- **At `-O2`, IDO uses callee-saved registers more aggressively** and fills branch delay slots better than `-O1`. At `-O1`, the compiler uses stack slots for variables surviving across calls, producing larger frames.
 
-## ultra:vimgr.c (0xA51A0)
+## Local vs Extern Data Definitions
 
-- **Matches directly from upstream at -O1.** The text range `0xA51A0..0xA5500` is `osCreateViManager` plus the static VI manager main loop, with padding before `osViSetMode`.
-- **Owns a small `.data` and large `.bss` block.** `__osViDevMgr` is `.data` at ROM `0xDFF20` / VRAM `0x800DF320` with emitted size `0x20`. The file's `.bss` is `0x8015DEB0..0x8015F0D0`; the following `tmp_task` at `0x8015F0D0` belongs to the existing raw BSS tail, not `vimgr.c`.
-- **Verify generated data labels before trusting old symbol names.** A previous `__osViDevMgr` symbol pointed at `0x800DCCBC`, which is nonzero game data. The actual VI manager data is the zeroed `OSDevMgr` accessed by `osCreateViManager` at `0x800DF320`.
+The IDO compiler generates significantly different code when global variables are defined locally in the same translation unit vs declared as `extern`:
 
-## ultra:pimgr.c (0xA4AE0)
+- **Local definitions**: The compiler keeps base addresses in registers across multiple 32-bit stores for 64-bit assignments, producing optimal instruction scheduling.
+- **Extern declarations**: The compiler reloads base addresses between stores, generating extra `lui` instructions and missing delay slot optimization opportunities.
 
-- **Defining data locally vs extern changes IDO codegen.** With `OSDevMgr __osPiDevMgr = { 0 }` defined locally, IDO keeps the base register (`at`) alive across multiple struct field stores, producing compact code. With `extern OSDevMgr __osPiDevMgr`, the compiler reloads `at` before each store, adding 4 extra instructions and breaking the match.
-- **Struct field offsets can't be exported as separate C symbols.** When matching a data segment that contains a struct, other asm files may reference individual field offsets (e.g., `player_bss_003C` at `__osPiDevMgr + 8`). These can't be defined in C since the struct is a single variable. The field symbol needs to be provided via `linker_scripts/libultra_syms.ld` at its absolute VRAM address.
-- **Splitting data segments reveals hidden symbol dependencies.** The raw data object previously defined all label symbols for every offset. Splitting it into a matched `.data` segment means only the C-defined symbols survive. Audit the nm output of the old raw data object for symbols referenced by other asm files.
-- **`piint.h` has VERSION_I macro mappings.** `__osPiRawStartDma` maps to `osPiRawStartDma` and `__osEPiRawStartDma` maps to `osEPiRawStartDma` via preprocessor macros in `PRinternal/piint.h` when `BUILD_VERSION < VERSION_J`. The C code uses the double-underscore names but the linker resolves the single-underscore versions.
-- **VERSION_I pimgr uses `CartRomHandle`/`LeoDiskHandle`**, not `__Dom1SpeedParam`/`__Dom2SpeedParam`. The `__osCurrentHandle` array is initialized with `extern` handle pointers.
-- **No `_FINALROM` / no `ramromMain`.** The ROM build excludes the `#ifndef _FINALROM` debug thread code. The matched function only contains `osCreatePiManager`.
+**Workaround for linker conflicts**: When a C file must define data locally (to match codegen), handle the resulting multiple-definition errors by:
+1. Adding symbol addresses to `linker_scripts/libultra_syms.ld`.
+2. Adding `--allow-multiple-definition` to `LDFLAGS`.
+3. Stripping the object's `.data`/`.bss` entries from the generated linker script after extraction.
 
-## ultra:synsetvol.c (0xA5FB0)
+## Zero-Initialized Globals with IDO
 
-- **Matches directly from upstream at -O1.** The upstream `synsetvol.c` compiles to matching assembly without modification, using the same include pattern as `synsetfxmix.c` (`<PR/libaudio.h>` + `"synthInternals.h"`).
-- **`_timeToSamples` needs VRAM address in symbol_addrs.txt.** The splat placeholder `0x700A5A98` must be corrected to the real VRAM address `0x800A5A98`. The VRAM address can be verified from the diff tool's `jal` target in the original ROM assembly. Added declaration to `include/synthInternals.h`.
+With IDO, `static u8 var = 0` and `u32 var = 0` generate `.data` section entries, not `.bss`. This means matching ultra files with zero-initialized globals will emit both `.data` and `.bss` sections that need to be split from existing raw data/BSS segments.
 
-## ultra:sinf.c (0xA6170)
+## Symbol Addresses: 0x700... vs 0x800...
 
-- **Requires -O2, not -O1.** The ultralib Makefile uses `-O3` for `src/gu/` files in VERSION_I, but IDO recomp only supports up to `-O2`. Fortunately `-O2` produces identical code to `-O3` for this function. At `-O1`, IDO allocates a 56-byte stack frame and uses different register allocation, producing 48 bytes of extra code that doesn't match.
-- **Segment splitting needed when C text is smaller than the original asm range.** The original `[0xA6170, asm]` segment spanned 0xA6170-0xA65D0 (0x460 bytes) covering sinf plus osAiSetFrequency and other functions. The compiled sinf.o text is only 0x1C0 bytes. A new asm segment at 0xA6330 is needed to cover the remaining functions.
-- **Rodata segment must be split at the correct ROM offset, not based on symbol VRAM addresses.** The sinf rodata symbols have VRAM 0x800E1B80 but the actual ROM data is at 0xE2780 (within the `[0xE2700, rodata]` YAML segment). Use the linker map file from a baseline build to find the correct rodata segment and offset.
-- **`#pragma weak` aliases work with IDO.** The `#pragma weak fsin = __sinf` and `#pragma weak sinf = __sinf` directives produce correct weak symbols that the linker resolves, matching the original symbol layout (sinf and __sinf at the same address).
+Symbols in `symbol_addrs.txt` with `0x700...` addresses are splat placeholders that must be converted to runtime `0x800...` VRAM addresses before the linker can resolve them. Always check for `0x700A` entries when adding ultra source that calls external functions. Verify the correct VRAM address by searching the asm files for the function label.
 
-## ultra:aisetnextbuf.c (0xA65D0)
+## Symbol Renames and Extraction
 
-- **VERSION_I uses `& 0x3FFF == 0x2000` check, not `& 0x1FFF == 0`.** The upstream source checks `(((u32)bufPtr + size) & 0x1fff) == 0` but the VERSION_I ROM checks `(((u32)bufPtr + size) & 0x3fff) == 0x2000`. These are not equivalent — the VERSION_I check is more restrictive, requiring bit 13 to be set.
-- **VERSION_I places `__osAiDeviceBusy()` AFTER the hardware bug workaround.** The upstream has the busy check before the workaround for `BUILD_VERSION >= VERSION_J`. VERSION_I has it after, which the code already handles via `#if BUILD_VERSION < VERSION_J`.
-- **Static `u8` initialized to 0 emits `.data` (not `.bss`) with IDO.** `static u8 hdwrBugFlag = FALSE;` produces a 16-byte `.data` entry (1 byte + 15 bytes padding), not `.bss`.
-- **Data segment split at ROM 0xE0C70.** The `hdwrBugFlag` static lives at VRAM 0x800E0070 (ROM 0xE0C70). The `[0xDFF20, data]` segment was split into three: `[0xDFF20, data]`, `[0xE0C70, .data, ultra/io/aisetnextbuf]`, `[0xE0C80, data]`.
+Changing names in `symbol_addrs.txt` causes splat to regenerate asm files with the new labels during `make extract`. Manual asm file edits are overwritten by extraction.
 
-## IDO Code Generation: Local vs Extern Data Definitions
+## C Text Alignment and Segment Splitting
 
-The IDO compiler (used at `-O1` for ultra files) generates significantly different code when global variables are defined locally in the same translation unit vs declared as `extern`. Specifically:
+- **C object `.text` sections pad to 16-byte alignment.** If a matched function's text is not 16-byte aligned, splitting at its exact end address shifts the following raw asm. Own a slightly larger aligned range instead.
+- **When C text is smaller than the original asm range**, a new asm segment is needed to cover the remaining functions.
+- **Rodata segments must be split at the correct ROM offset**, not based on symbol VRAM addresses. Use the linker map file to find the correct split points.
 
-- **Local definitions**: The compiler keeps base addresses in registers across multiple 32-bit stores for 64-bit assignments, producing optimal instruction scheduling (e.g., one `lui` for both words of a 64-bit store, productive use of branch delay slots).
-- **Extern declarations**: The compiler reloads base addresses between stores, generating extra `lui` instructions and missing delay slot optimization opportunities. This can add 2+ extra instructions per 64-bit store.
+## `hasm` for Handwritten Assembly
 
-This matters when matching `osInitialize` and similar functions that perform 64-bit assignments to global variables like `osClockRate`.
+For libultra functions that are handwritten assembly, use the `hasm` segment type in the YAML instead of `asm`. Upstream libc assembly can sometimes be reused directly as `hasm` without local macro rewrites. Use the project's `macro.inc` conventions (`glabel`/`endlabel`, COP0 register aliases).
 
-### Workaround
+## VERSION_I Code Paths
 
-When matching ultra functions that define data globals, keep the data definitions in the C source file (not `extern`). To handle the resulting multiple-definition linker conflicts:
+This project uses VERSION_I. Key differences from later versions:
+- Uses `CartRomHandle`/`LeoDiskHandle`, not `__Dom1SpeedParam`/`__Dom2SpeedParam`.
+- No `_FINALROM` debug thread code.
+- Different alignment checks in some IO functions (e.g., `& 0x3FFF == 0x2000` vs `& 0x1FFF == 0`).
+- Helper functions may clear all 16 words of `__osPfsPifRam` before setting `pifstatus`.
+- Simpler timer/path logic without `__OSGlobalIntMask` or `BUILD_VERSION >= VERSION_K` guards.
+- EPI functions use `WAIT_ON_IOBUSY` + direct address access, not the full `EPI_SYNC` handle-domain logic.
 
-1. Add the symbol addresses to `linker_scripts/libultra_syms.ld` so the linker resolves references to the correct VRAM addresses.
-2. Add `--allow-multiple-definition` to `LDFLAGS` in the Makefile.
-3. Remove the object's `.data` and `.bss` linker entries from the generated linker script after extraction (the real data comes from the extracted data segments).
-4. Add a post-extract step in the Makefile to strip these entries from the generated linker script.
+## `#pragma weak` Aliases
 
-## Symbol Address Placeholders (0x700... vs 0x800...)
+`#pragma weak alias = real` directives produce correct weak symbols that the linker resolves under IDO. This matches the original symbol layout where multiple names point to the same address.
 
-Symbols in `symbol_addrs.txt` with `0x700...` addresses are splat placeholders that must be converted to runtime `0x800...` VRAM addresses before the linker can resolve them. Always check for `0x700A` entries when adding ultra source that calls external functions.
+## ROM Order vs Upstream Source Order
 
-## Simple Ultra Functions Often Match Directly
+The target ROM may order functions differently from the upstream source file. Always check the ROM function order and port functions in that order so object boundaries line up. This applies to string helpers, math functions, ldiv/lldiv, and audio Param/Pull pairs.
 
-For straightforward ultra functions like `osViSetMode` that don't use _DEBUG code, have no local data, and just call `__osDisableInt`/`__osRestoreInt` around struct field assignments, the upstream ultralib source often matches directly at `-O1` without modification. Always check if the compiled object emits only `.text` (no `.data`/`.rodata`) before looking for data segments to match.
+## YAML Comments Can Be Misleading
 
-## Handwritten Assembly (.s) Ultra Functions
+Comments like `ultra:somefile.c` on YAML segments are often wrong or cover too much text. Verify actual function boundaries against disassembly and `symbol_addrs.txt`. A single commented segment may contain multiple source files or different functions than the comment suggests.
 
-For libultra functions that are handwritten assembly (e.g., `osWritebackDCacheAll`, `osWritebackDCache`, `bzero`), use the `hasm` segment type in `snowboardkids.yaml` instead of `asm`. The `hasm` type tells splat the code is handwritten and should not be split into individual functions. The YAML comment may be wrong about which function is actually at a given address — verify with the disassembly and `symbol_addrs.txt` before matching (e.g., `writebackdcache.s` contains `osWritebackDCache` while `writebackdcacheall.s` contains `osWritebackDCacheAll`, which are at different ROM addresses).
+## `ALIGNED` Macro Requires `PRinternal/macros.h`
 
-Upstream libc assembly can sometimes be reused directly. `../ultralib/src/libc/bzero.s` and `../ultralib/src/libc/bcopy.s` matched as `hasm` under `asm/ultra/libc/` without local macro rewrites.
+`ALIGNED(x)` expands to `__attribute__((aligned(x)))`, which is redefined as a no-op for IDO. Ultra source files using `ALIGNED` must include `PRinternal/macros.h` or IDO will fail with a syntax error.
 
-## Duplicate Symbol Names at Same Address
+## Disabled Asserts
 
-Some symbols may share the same VRAM address (e.g., `__osSiRawReadIo` and `__osSpRawReadIo` at `0x800AA420`). These are likely different names for the same function. Remove the incorrect/unused name to avoid duplicate symbol errors. Check which name is correct based on the calling context (SI vs SP address space).
+Several upstream IO files include `assert.h`, but this repo builds with `NDEBUG`. Remove the `assert.h` include and the assert statements rather than adding a local assert header. The disabled assertions don't affect codegen.
 
-## Combining Small Adjacent Ultra Functions
+## `_bcopy` vs `bcopy`
 
-When a YAML `asm` segment contains functions from multiple ultra source files (e.g., `sptaskyield.c` adjacent to `sptaskyielded.c`, `osViSwapBuffer`, etc.), split the segment at the boundary of the target file's functions. Small related functions like `osSpTaskYield` (5 instructions) and `osSpTaskYielded` (from a separate upstream file) can be combined into a single C source file since they share the same headers and are trivially small. The remaining unmatched functions become a separate `asm` segment at the split address.
+The header declares `bcopy` but the linked symbol is `_bcopy`. Use `_bcopy` in source to match the actual linker symbol.
 
-## Audio Library Functions May Need -O2
+## Combining Small Adjacent Functions
 
-While most ultra functions match at `-O1`, audio library functions (under `src/ultra/audio/`) may require `-O2` to match the target assembly. The tighter register allocation and delay slot usage in the target (e.g., saving function arguments in registers rather than spilling to stack) are characteristic of `-O2` optimization. Test both `-O1` and `-O2` when matching audio functions.
+Small related functions from separate upstream files (e.g., `osSpTaskYield` and `osSpTaskYielded`) can be combined into a single C source file when they share the same headers and are trivially small. The remaining unmatched functions become a separate asm segment at the split address.
 
-## Minimal Headers for Simple Audio Functions
+## Own the Full Range to Avoid Alignment Padding
 
-Simple audio library functions like `alSynAddPlayer` that only use public API types (`ALSynth`, `ALPlayer`) and OS primitives (`osSetIntMask`) don't need the internal `synthInternals.h` header. Including `<PR/os.h>` and `<PR/libaudio.h>` is sufficient.
+If splitting after a matched helper function causes the C object's `.text` section to pad and shift following raw asm, match the entire upstream file instead so internal functions pack without section-end padding.
 
-## synthInternals.h for Internal Audio Functions
+## Reuse of Upstream Source
 
-Audio functions that access internal types (`ALParam`, `PVoice`, `ALFilter`, `__allocParam`) need the `synthInternals.h` internal header. Create a local copy at `include/synthInternals.h` with the needed type definitions (ALParam, ALFilter, PVoice, filter enum values, `__allocParam` declaration). For `PVoice`, use a char padding array for unused fields between `channelKnob` (offset 0xC) and `offset` (offset 0xD8) since the full struct depends on many sub-types (ALLoadFilter, ALResampler, ALEnvMixer).
-
-## ALStartParam Type for Voice Start Functions
-
-The `alSynStartVoice` function uses the internal `ALStartParam` struct (defined in upstream `synthInternals.h`) which has: `next` (ALParam*), `delta` (s32), `type` (s16), `unity` (s16), `wave` (ALWaveTable*). Add this typedef to the project's `include/synthInternals.h` alongside the existing `ALParam` and `PVoice` types. The upstream source matches directly at the default optimization level without modification.
-
-## Matching Assembly-Only Ultra Functions (interrupt.s)
-
-Some ultra source files are pure assembly (`.s`), not C. For these, create a clean handwritten assembly file under `asm/ultra/os/` using the project's `macro.inc` conventions (`glabel`/`endlabel`, COP0 register aliases like `Status` for `$12`), and use the `hasm` segment type in `snowboardkids.yaml`. For `interrupt.s`, the upstream has a `BUILD_VERSION >= VERSION_J` branch — this project uses VERSION_I, so the simpler `#else` path applies (no `__OSGlobalIntMask` interaction). The `macro.inc` file provides COP0 register aliases that can be used directly instead of upstream's `C0_SR`/`SR_IE` macros.
-
-## Verifying Symbol ROM Addresses
-
-When converting `0x700...` splat placeholder symbols to real `0x800...` VRAM addresses, verify the actual ROM address by searching the asm files for the function label. The `0x700...` value uses `0x70000000 + presumed_ROM`, but the presumed ROM may be wrong. For example, `__allocParam` was listed as `0x700A5BA0` (implying ROM 0xA5BA0) but actually lives at ROM 0xA67A0 inside the synthesizer.c segment (VRAM 0x800A5BA0). The asm file `asm/A6690.s` showed `func_800A5BA0` at ROM `A67A0`, confirming the correct address.
-
-## Simple Timer Functions Match Directly from Upstream
-
-For straightforward libultra functions like `osSetTimer` that follow the VERSION_I code path (no `BUILD_VERSION >= VERSION_K` logic), the upstream source matches directly at `-O1` with no modifications needed. The VERSION_I path omits the `__osDisableInt`/`__osRestoreInt` wrapper and the timer list recalculation, using a simpler `__osInsertTimer` + `__osSetTimerIntr` pattern instead. No `.data`, `.rodata`, or `.bss` sections are emitted — only `.text`.
-
-## Verifying BSS Symbol Addresses Against Assembly
-
-When matching functions that reference BSS globals, verify the symbol addresses in `symbol_addrs.txt` against the actual assembly access patterns. The assembly may access a different address than what `symbol_addrs.txt` lists — the disassembler can misidentify which BSS chunk corresponds to which symbol. For example, `__osCurrentTime` was listed at `0x8015E564` (a 0xAFC-byte chunk that was actually a vimgr BSS allocation), but the assembly accessed it at `0x8015F2B0` (adjacent to `__osBaseCounter` at `0x8015F2B8`). Fixing the address in `symbol_addrs.txt` with the correct size annotation (`// size:0x8`) causes the BSS file to regenerate correctly. The `jal` target addresses in assembly use VRAM addresses (`0x800ABB40` not `0x700ABB40`), so splat placeholders must also be converted.
-
-## siacs.c: Zero-Initialized Globals Go to .data with IDO
-
-With IDO at `-O1`, `u32 var = 0` generates a `.data` section entry (not `.bss`). When matching ultra files with zero-initialized globals, the compiled object will emit both `.data` and `.bss` sections. These need to be split out of the existing raw data/BSS segments in `snowboardkids.yaml`. The key steps:
-
-1. Compile the C file and check sections with `mips-linux-gnu-objdump -h` and `mips-linux-gnu-nm -n`.
-2. Find the data/BSS symbols in the existing raw asm files (`asm/data/E0C80.data.s`, `asm/data/bss_chunk_c.bss.s`).
-3. Split the YAML segments around the emitted ranges (e.g., split `[0xE0C80, data]` into three: before, `.data` for the C file, after).
-4. Run `./tools/build-and-verify.sh` — Splat regenerates the asm files based on the new YAML. No manual asm file editing needed.
-
-## siacs.c: Including PRinternal/macros.h for ALIGNED
-
-The `ALIGNED(x)` macro (defined in `PRinternal/macros.h`) expands to `__attribute__((aligned(x)))`, which is redefined as a no-op for non-GCC compilers (IDO) via `#define __attribute__(x)`. Ultra source files using `ALIGNED` must include `PRinternal/macros.h` or IDO will fail with a syntax error at the `ALIGNED` token.
-
-## VI Current Context vs Active Queue Labels
-
-Do not trust `ultra:` YAML comments or generated `D_...` names when a tiny helper returns a global pointer. The range at `0xAC3D0` was annotated as `getactivequeue.c`, but the target loads `0x800E0190`, which is the VI current-context pointer. The correct source is `io/vigetcurrcontext.c` (`__osViGetCurrentContext`), not `os/getactivequeue.c`.
-
-Likewise, `D_800E0190` is the real `__osViCurr` pointer. A later zero-filled block at `0x800E0320` was mislabeled `__osViCurr`; using that stale symbol made `osViGetCurrentFramebuffer` compile to load from `0x800E0320` instead of the target `0x800E0190`. Rename the data label and all asm references to the owning libultra symbol rather than adding aliases.
-
-## Single Commented Segments May Contain Several Libultra Files
-
-The original `0xA5970` segment was commented as `vigetcurrframebuf.c`, but it also contains earlier VI helpers and a following framebuffer helper. Split the range around the exact function: keep `0xA5970..0xA5A60` as asm, match `osViGetCurrentFramebuffer` at `0xA5A60`, then keep `0xA5AA0` as asm until the next helper is identified. If an attempted C segment causes unresolved neighboring symbols, inspect the original range and split it instead of forcing the whole comment range to one source file.
-
-This also applies to incorrect comments. The range at `0xAB010` was commented as `sprawwrite.c`, but the actual functions were `__osSetFpcCsr`, `__osSiRawReadIo`, and `__osSiRawWriteIo`. Split it into `hasm, ultra/os/setfpccsr`, `c, ultra/io/sirawread`, and `c, ultra/io/sirawwrite`; do not keep the misleading comment just because it starts with `ultra:`.
-
-`osAiSetFrequency` at `0xA6330` matches upstream `io/aisetfreq.c`, but the raw segment also includes a following helper at `0xA6490`. Split `aisetfreq.c` at `0xA6490` and leave the helper raw until it is identified.
-
-## Local Header Drift in Audio Heap Sources
-
-Upstream `audio/heapinit.c` includes `<libaudio.h>` and gets `AL_CACHE_ALIGN` from upstream `synthInternals.h`. In this repo, `libaudio.h` lives as `PR/libaudio.h` and the local `include/synthInternals.h` does not define `AL_CACHE_ALIGN`. Defining `AL_CACHE_ALIGN` as `15` locally in `heapinit.c` preserves the upstream codegen and avoids broad header changes.
-
-## Disabled Asserts Without assert.h
-
-Several upstream IO files include `assert.h`, but this repo does not provide that header and builds with `NDEBUG`. For simple VERSION_I IO functions such as `sirawread.c`, `sirawwrite.c`, `pirawread.c`, and `sprawdma.c`, remove the `assert.h` include and the assert statements rather than adding a new local assert header. The resulting code matches because those assertions are disabled in the target build.
-
-## string.c Function Order Can Differ from Upstream
-
-The target `string.c` range at `0xAAB70` uses the upstream function bodies but ROM order is `memcpy`, `strlen`, then `strchr`, not the upstream source order. Port the bodies in ROM order so the object boundaries line up. Also convert `strchr` from the splat placeholder `0x700A9FC4` to the real VRAM address `0x800A9FC4`.
-
-## mtxutil.c Requires ROM Order and Divide-Form L2F
-
-The target `mtxutil.c` range at `0xAAC10` uses `guMtxF2L`, `guMtxIdentF`, `guMtxIdent`, then `guMtxL2F`; upstream orders `guMtxL2F` earlier. Keep the source functions in ROM order. `guMtxL2F` also needs a local `float scale = 0x10000;` and `(float)q / scale`; using the local `FIX32TOF` macro folds into reciprocal multiply at `-O2`, but the target emits `div.s` with `65536.0`.
-
-## crc.c Only Covers the Initial CRC Helpers
-
-The range commented `ultra:crc.c` at `0xA7D50` only contains `__osContAddressCrc` and `__osContDataCrc` through `0xA7ED0`. The following code is controller RAM read/write logic, so split the YAML at `0xA7ED0` and leave the neighbor raw until it is matched to its actual source. The VERSION_I `crc.c` bodies match directly at the repo's IO optimization settings.
-
-## pfsisplug.c Owns __osPfsPifRam and Has a VERSION_I Clear Loop
-
-`pfsisplug.c` defines the `OSPifRam __osPfsPifRam` BSS object at `0x8015F130`; split BSS so `ultra/io/pfsisplug` owns `0x8015F130..0x8015F170`. Annotate `__osPfsPifRam = 0x8015F130; // type:OSPifRam size:0x40` so raw neighboring asm references to `pifstatus` become `__osPfsPifRam + 0x3C` instead of standalone field labels.
-
-The target `__osPfsRequestData` includes a VERSION_I-specific loop that clears all 16 words of `__osPfsPifRam` before setting `pifstatus`. Add the loop as `((u32 *)&__osPfsPifRam)[i] = 0;`; a local `u32 *ram` changes the stack frame. Also declare `u8 *ptr` without initialization and assign `ptr = (u8 *)&__osPfsPifRam;` after `__osPfsPifRam.pifstatus = CONT_CMD_EXE;` so IDO does not hoist the pointer setup above the clear loop.
-
-## cosf.c Mirrors sinf.c Segment Ownership
-
-`gu/cosf.c` matches upstream directly at this repo's GU settings. Like `sinf.c`, it owns both text and rodata: text at `0xAAE80` and the `0x50` coefficient rodata block at `0xE2930`.
-
-## pirawdma.c Segment Also Contains epirawdma.c
-
-The range commented `ultra:pirawdma.c` at `0xAB570` contains two source files: `io/pirawdma.c` for `osPiRawStartDma` at `0xAB570..0xAB650`, then `io/epirawdma.c` for `osEPiRawStartDma` at `0xAB650..0xAB874`, followed by padding to the existing `0xAB880` boundary. Split the YAML at the function label instead of assigning the whole commented range to `pirawdma.c`. Both upstream VERSION_I bodies match directly at the repo's IO `-O1` settings.
-
-## cartrominit.c and leodiskinit.c Omit speed Stores
-
-The VERSION_I upstream `io/cartrominit.c` and `io/leodiskinit.c` are close, but this target does not emit `CartRomHandle.speed = 0` or `LeoDiskHandle.speed = 0`. Leaving those stores in makes the combined text 0x10 bytes too long, which shifts all following text/data/BSS addresses and creates misleading downstream diffs. Use `_bzero` rather than upstream `bzero`, matching this repo's real libc label. The handle BSS objects have `OSPiHandle` size `0x74` and object padding to `0x80`; `__osDiskHandle` sits at `LeoDiskHandle + 0x74` (`0x8015F264`), and the following raw BSS resumes at `0x8015F270`.
-
-## leointerrupt.c Matches Upstream and Owns leoDiskStack
-
-`io/leointerrupt.c` matches upstream VERSION_I source directly at `0xAF2C0`. Its `leoDiskStack[OS_PIM_STACKSIZE]` definition emits a 0x1000-byte BSS object at `0x8015F480`, so split `bss_chunk_d` before that address and add `.bss, ultra/io/leointerrupt`. Once the whole text range is C, remove the old `0x700AED64` / `0x700AEE4C` helper placeholders; they are static helpers inside the C object.
-
-## devmgr.c Ends Before the VI Initializer
-
-The `ultra:devmgr.c` range starts at `0xAB880`, but only `__osDevMgrMain` belongs to `io/devmgr.c`; it ends at `0xABD10`. The following `func_800AB110` is a separate VI initialization helper and should remain raw until identified. `devmgr.c` also owns the switch jump table rodata at `0xE2980`. Convert its callable `0x700...` placeholders (`__osResetGlobalIntMask`, `osEPiRawWriteIo`, `osEPiRawReadIo`, `__osSetGlobalIntMask`, `osYieldThread`) to real `0x800...` runtime addresses before linking the source.
-
-## Late OS/PI Helpers Use Small VERSION_I Bodies
-
-`resetglobalintmask.c`, `setglobalintmask.c`, and `yieldthread.c` match upstream directly at `-O1`. The target `epirawwrite.c` and `epirawread.c` do not use upstream's `EPI_SYNC` handle-domain logic or the `assert(data != NULL)` include; they only `WAIT_ON_IOBUSY(stat)`, then access `pihandle->baseAddress | devAddr`. Keeping `EPI_SYNC` makes each object much larger and shifts `__OSGlobalIntMask`, `__osRunQueue`, and `__osRunningThread` references in every following function.
-
-## ldiv.c Uses Target Function Order
-
-The upstream `libc/ldiv.c` source lists `ldiv` before `lldiv`, but the ROM range at `0xB1840` is `lldiv` first, then `ldiv` at `0xB1940`. Port the same bodies in target order. This repo does not include the compiler-specific upstream `stdlib.h`, so local `ldiv_t` and `lldiv_t` typedefs are enough for this isolated file.
-
-## destroythread.c Matches the VERSION_I Queue Walk
-
-`osDestroyThread` at `0xAFB40` matches upstream `os/destroythread.c` at `-O1` using the VERSION_I/GCC active-queue walk: initialize `pred = __osActiveQueue`, `succ = pred->tlnext`, and loop while `succ != NULL`. This emits a 0x100-byte text section including padding through `0xAFC40`, exactly before `ultra/libc/xlitob`.
-
-## probetlb.s Matches Upstream Handwritten Assembly
-
-`__osProbeTLB` at `0xACB90` is a direct handwritten-asm match for upstream `os/probetlb.s`. Add it as `hasm, ultra/os/probetlb`; the upstream `LEAF`/`END` source emits the target 0xB8-byte section including the final padding nops.
-
-## exceptasm.s Matches as VERSION_I Handwritten Text
-
-`os/exceptasm.s` matches the full `0xA70D0..0xA79E0` text range as a `hasm` segment, including `__osExceptionPreamble`, `__osException`, `send_mesg`, `handle_CpU`, queue helpers, dispatch, and cleanup. Keep `send_mesg` as a real runtime symbol at `0x800A6A14` so callers and regenerated asm do not use `func_800A6A14`.
-
-The source object emits exactly `0x910` bytes of `.text` and no owned `.data`/`.rodata`. Leave the `0xE27E0` rodata as raw: it contains the interrupt offset table and jump table used by the exception handler, and it already sits correctly before the raw xprintf rodata.
-
-## synallocvoice.s Needs a Single Text Object
-
-The target order is `_allocatePVoice` followed by `alSynAllocVoice` at `0xA5BD0..0xA5E00`. A direct C port of `alSynAllocVoice` matches its instructions, but splitting it into its own C segment at `0xA5CB8` is not viable because the C object's 16-byte text alignment shifts it to `0xA5CC0`.
-
-`_allocatePVoice` also differs under the local audio `-O2` flags: IDO keeps `drvr` in `$s0`, while the ROM spills caller-saved `$t0` around `alUnlink` and `alLink`. Keep this file as one `hasm` text object with real libultra labels until the exact compiler/source conditions for the allocator are identified.
-
-## sl.c Starts Before Its Comment and Owns alGlobals Data
-
-The `ultra:sl.c` comment begins at `0xA64C0`, but the upstream source starts one segment earlier with `alUnlink` at `0xA6490`. Match the whole text range `0xA6490..0xA6550` as `audio/sl.c` in ROM order: `alUnlink`, `alLink`, `alClose`, then `alInit`.
-
-`sl.c` owns `alGlobals` at `0x800E0060`, emitted as a 0x10-byte `.data` object at `0xE0C60`. Split the raw `DFF40` data before that address and keep `alGlobals` in `symbol_addrs.txt` so neighboring raw audio segments regenerate references to the real source-owned symbol instead of `D_800E0060`. Convert `alSynNew` and `alSynDelete` placeholders to their runtime addresses when linking the source.
-
-## resample.c Direct Port Is 0x10 Bytes Short
-
-The target `audio/resample.c` range is `alResampleParam` then `alResamplePull` at `0xAE160..0xAE460`, with rodata at ROM `0xE29D0..0xE2A10` (VMA `0x800E1DD0..0x800E1E10`). Do not split by the VMA-looking `0xE1DD0`; that belongs to unrelated game rodata.
-
-A direct upstream-style C port gets `alResampleParam` close but emits a `0x2F0` text section instead of the target `0x300`. `alResamplePull` uses `$s0`-`$s2` under the local audio `-O2` path, while the ROM uses caller-saved `$t0`-`$t2` and explicit stack spills. Leave the segment raw until the exact source shape or flags produce the 0x300-byte text section.
-
-## xlitob.c Owns 0x30 Bytes of .data
-
-`libc/xlitob.c` matches upstream for `_Litob`, but its two digit strings are emitted as a 0x30-byte `.data` section at `0xE1080`. Although the string contents account for 0x28 bytes, IDO pads the static data through `0xE10B0`; splitting the following raw data at `0xE10A8` shifts downstream VMAs and breaks the checksum even when the text diff is clean. The helper `lldiv` is the raw function at real runtime address `0x800B0C40`, so convert the old `0x700B0C40` placeholder and rename the raw asm label.
-
-The neighboring `xldtob.c` range at `0xAFEE0..0xB09A0` matches as `src/ultra/libc/xldtob.c` when compiled with direct IDO `-O3` instead of the asm-processor path. The object emits `_Genld` first and `_Ldtob` at object offset `0x570`; keep the upstream `_Genld` definition/control-flow shape because small cleanups can shrink `_Genld` by `0x10` and shift `_Ldtob`. Its `.rodata` is the 0x60-byte block at ROM `0xE2A70..0xE2AD0`.
-
-## pfsgetstatus.c Reuses pfsisplug Helpers
-
-The target `io/pfsgetstatus.c` at `0xA85E0` does not match upstream's one-channel request helper path. It calls `__osPfsRequestData(CONT_CMD_REQUEST_STATUS)` and `__osPfsGetInitData`, both already emitted by `pfsisplug.c`, then indexes the returned `OSContStatus data[MAXCONTROLLERS]` by channel. Matching the target body directly is cleaner than porting upstream `__osPfsRequestOneChannel` / `__osPfsGetOneChannelData`.
-
-## pfschecker.c Ends Before the xprintf Helper
-
-The `ultra:pfschecker.c` comment at `0xA9450` covers too much text. Upstream `io/pfschecker.c` matches only `osPfsChecker`, `corrupted_init`, and `corrupted` through `0xA9EB0` with no emitted rodata. Keep a raw asm split at `0xA9EB0`; that tail helper is called by raw `xprintf` and uses labels referenced by the existing `E2830` rodata jump table.
-
-## xprintf.c Has Split Text but Shared Raw Rodata
-
-The raw helper at `0xA9EB0` is `_Putfld`, not part of `pfschecker.c`; `_Printf` starts at `0xAA520`. Match the whole text range `0xA9EB0..0xAAB70` as `src/ultra/libc/xprintf.c`, not as two separate text segments. This file needs the upstream libultra `-O3` libc settings: at `-O2`, IDO emits `_Printf` first and shifts the following code by `0x20`; with scoped `-O3`, `_Putfld` is emitted first and `_Printf` lands at `0x800A9920`.
-
-`xprintf.c` owns `.data` at `0xE0CD0..0xE0D20` and `.rodata` at `0xE2830..0xE2930`. The rodata contains `_Printf`'s `hlL`, flag-character, and flag-bit tables at `0xE2830..0xE2854`, immediately followed by `_Putfld`'s jump table at `0xE2854`, so keep it as one `.rodata, ultra/libc/xprintf` object rather than trying to split the tables.
-
-## contramread.c and contramwrite.c Use VERSION_I Pack Helpers With Clear Loops
-
-The controller RAM segments at `0xA7ED0` and `0xA8250` match the VERSION_I split source shape: public `__osContRamWrite` / `__osContRamRead` functions plus static pack helpers. This ROM's pack helpers clear all 16 words of `__osPfsPifRam` before setting `pifstatus`, the same local drift seen in `__osPfsRequestData`. Keep the helper-local `ptr = (u8 *)__osPfsPifRam.ramarray;` before the clear loop; IDO still emits the target stack pointer setup and the checksum matches.
-
-## contpfs.c Must Own the Whole Range
-
-The first two `contpfs.c` helpers (`__osSumcalc` and `__osIdCheckSum`) match exactly as C, but splitting after them at `0xA87B4` fails because the C object's `.text` section pads to 16-byte alignment and shifts the following raw asm. Use the full upstream `io/contpfs.c` so the object owns `0xA86F0..0xA9450` and the internal functions pack without section-end padding. Also convert the old `__osGetId = 0x700A8164` placeholder to real VRAM `0x800A8164`; the following raw `pfschecker.c` caller should call `__osGetId`, not `func_800A8164`.
-
-## save.c Matches in ROM Order
-
-The target `audio/save.c` range at `0xAF1D0` is ordered `alSaveParam` first, then `alSavePull` at `0xAF204`; upstream lists `alSavePull` before `alSaveParam`. Port the upstream bodies in ROM order and omit the disabled assert/include noise. Convert `alSaveParam` from its `0x700AE5D0` placeholder to real VRAM `0x800AE5D0`.
-
-`audio/mainbus.c` and `audio/auxbus.c` have the same ROM-order `Param`-then-`Pull` layout, but direct C ports do not currently match: IDO keeps the fifth `Acmd *p` argument in `$s1` for the initial clear commands, while the target loads it into `$t0` before saving callee registers and only later uses `$s1` for `sources`. Leave those ranges raw until the exact source shape or flags are found.
-
-## syncprintf.c Needs an Aligned Source Chunk
-
-The `ultra:syncprintf.c` comment on the large `0x464E0` raw segment is misleading: `osSyncPrintf` is only the tiny final-ROM stub at `0x49A4C..0x49A60`, surrounded by unrelated/raw functions. Compiling an empty variadic `osSyncPrintf` with `-O1` emits the exact 0x14-byte instruction sequence, but the C object's `.text` section pads to 0x20. Own `0x49A40..0x49A80` as a source chunk instead; it includes the preceding print-stub tail, `osSyncPrintf`, and the first aligned bytes of the following raw function so downstream ROM offsets do not shift.
-
-## ptstart Needs an Aligned Source Chunk
-
-The `ultra:initialize.c` comment on the large `0x41880` raw segment is misleading: the only libultra-style symbol in that area is `ptstart` at `0x43164..0x43174`. Splitting exactly at `0x43164` shifts the following raw function because the object text section wants 0x10-byte alignment. Own `0x43160..0x43180` as a source chunk instead; it includes the previous delay-slot instruction, `ptstart`, and the first aligned bytes of the following raw function.
-
-## filter.c Is the Small alFilterNew Range
-
-The `0xB0B50..0xB0B70` range is upstream `audio/filter.c` `alFilterNew`. It is safe to match as a standalone C object because the range starts and ends on 0x10-byte boundaries; IDO emits the field stores plus `jr ra` and the needed trailing nop padding without shifting the following `reverb.c` object.
-
-## reverb.c Uses libultra 2.0I Audio O3
-
-The `0xB0B70` range is upstream `audio/reverb.c`, but it only matches with the libultra 2.0I audio `-O3` build. At `-O2`, IDO keeps `_filterBuffer`'s low-pass pointer in `$s0`, shifts `_loadBuffer`/`_saveBuffer`, and emits the wrong function boundaries. The matching object orders the internal helpers as `_doModFunc`, `_filterBuffer`, `_saveBuffer`, `_loadBuffer`, `_loadOutputBuffer`, `alFxParamHdl`, `alFxParam`, `alFxPull`.
-
-This repo's asm-processor rejects `-O3` because of function reordering, so `reverb.o` needs target-specific variables like `xprintf.o`: set `C_OPT = -O3`, add the audio include path, and set `IDO_CC = $(CC)` so the normal pattern recipe invokes IDO directly. Reverb owns `.rodata` at `0xE2AD0..0xE2B00`; it does not own `.data`, and the following VI mode data must remain at `0xE10B0`.
-
-## env.c Uses libultra 2.0I Audio O3
-
-The true `audio/env.c` text scope is `0xAE460..0xAF0C0`: `_ldexpf`, `_frexpf`, `alEnvmixerParam`, the static `_getRate`, static `_pullSubFrame`, static `_getVol`, and `alEnvmixerPull`. The file also owns `.data` at `0xE0F40..0xE1080` and `.rodata` at `0xE2A10..0xE2A70`.
-
-Use the upstream libultra source order, not ROM order. Under direct IDO `-O3`, the compiler reorders the object into the target ROM order and emits the private static calling convention used by `_getRate` and `_getVol`. At local audio `-O2`, the object preserves source order and does not match. The asm-processor cannot compile `-O3`, so `env.o` needs `C_OPT = -O3` and `IDO_CC = $(IDO_DIRECT)`.
-
-## Some libmus Comments Are Libultra Tail Labels
-
-The `libmus:player_api.c` comments at `0xAB490` and `0xABE50`, and the `libmus:timerintr.c` comment at `0xABFD0`, are not libmus source ranges. They are libultra code where spimdisasm previously found misleading labels inside function tails:
-
-- `0xAB490..0xAB570` is `io/piacs.c` followed by `os/getthreadpri.c`; the old `MusFxBankNumberOfEffects` label was the `thread->priority` return tail of `osGetThreadPri`.
-- `0xABE50..0xABFD0` is `os/jammesg.c` followed by `io/pigetcmdq.c`; the old `MusPtrBankGetCurrent` label was the `__osPiDevMgr.cmdQueue` return tail of `osPiGetCmdQueue`.
-- `0xABFD0..0xAC3D0` is `os/timerintr.c`, not libmus. It owns `__osTimerList` data at `0xE0DA0..0xE0DB0` and timer BSS at `0x8015F290..0x8015F2D0`.
-
-For `timerintr.c`, keep the upstream `for (; timep != __osTimerList && tim > timep->value; timep = timep->next)` loop in `__osInsertTimer`. Rewriting it as an equivalent `while` loop emits two extra instructions under IDO, grows `.text` from the target `0x400` to `0x410`, and shifts the main data/BSS VMAs.
-
-## synthesizer.c Ends Before os/thread.c
-
-The `0xA6690` broad asm range is `ultra/audio/synthesizer.c` through `0xA6D70`, followed by `ultra/os/thread.c` for `__osDequeueThread` at `0xA6D70..0xA6DB0`. `ultra/os/interrupt` starts at `0xA6DB0`; do not keep `__osDequeueThread` inside the synthesizer segment.
-
-`audio/synthesizer.c` owns the two double constants at ROM `0xE27D0..0xE27E0` (`0x800E1BD0..0x800E1BE0`). Split this as `.rodata, ultra/audio/synthesizer`; leaving it as raw rodata emits duplicate raw symbols and shifts later data references by `0x10`.
-
-`alSynNew` matches with the real upstream `PVoice` layout (`sizeof(PVoice) == 0xDC`) and the otherwise-unused upstream locals `ALVoice *vv` and `ALVoice *vvoices`, which shape IDO's stack/register allocation. `alAudioFrame` is still best kept as a per-function asm include for now; the close C port keeps the correct size but differs in stack placement for `tmp` and register allocation around the client callback loop.
+For straightforward libultra functions that don't use `_DEBUG` code, have no local data, and just call simple helpers around struct field assignments, the upstream ultralib source often matches directly without modification. Always try the unmodified upstream source first before making changes.
