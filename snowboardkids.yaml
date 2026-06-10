@@ -193,7 +193,8 @@ segments:
       - [0xA6550, c, ultra/os/virtualtophysical]
       - [0xA65D0, c, ultra/io/aisetnextbuf]
       - [0xA6680, c, ultra/io/aigetlen]
-      - [0xA6690, asm] # ultra:synthesizer.c
+      - [0xA6690, c, ultra/audio/synthesizer]
+      - [0xA6D70, c, ultra/os/thread]
       - [0xA6DB0, hasm, ultra/os/interrupt]
       - [0xA6DF0, c, ultra/os/gettime]
       - [0xA6E80, c, ultra/os/settimer]
@@ -335,7 +336,7 @@ segments:
       - [0xE26F0, rodata]
       - [0xE2700, rodata]
       - [0xE2780, .rodata, ultra/gu/sinf]
-      - [0xE27D0, rodata]
+      - [0xE27D0, .rodata, ultra/audio/synthesizer]
       - [0xE27E0, rodata]
       - [0xE2830, .rodata, ultra/libc/xprintf]
       - [0xE2930, .rodata, ultra/gu/cosf]

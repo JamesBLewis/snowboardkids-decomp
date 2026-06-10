@@ -290,3 +290,11 @@ The `libmus:player_api.c` comments at `0xAB490` and `0xABE50`, and the `libmus:t
 - `0xABFD0..0xAC3D0` is `os/timerintr.c`, not libmus. It owns `__osTimerList` data at `0xE0DA0..0xE0DB0` and timer BSS at `0x8015F290..0x8015F2D0`.
 
 For `timerintr.c`, keep the upstream `for (; timep != __osTimerList && tim > timep->value; timep = timep->next)` loop in `__osInsertTimer`. Rewriting it as an equivalent `while` loop emits two extra instructions under IDO, grows `.text` from the target `0x400` to `0x410`, and shifts the main data/BSS VMAs.
+
+## synthesizer.c Ends Before os/thread.c
+
+The `0xA6690` broad asm range is `ultra/audio/synthesizer.c` through `0xA6D70`, followed by `ultra/os/thread.c` for `__osDequeueThread` at `0xA6D70..0xA6DB0`. `ultra/os/interrupt` starts at `0xA6DB0`; do not keep `__osDequeueThread` inside the synthesizer segment.
+
+`audio/synthesizer.c` owns the two double constants at ROM `0xE27D0..0xE27E0` (`0x800E1BD0..0x800E1BE0`). Split this as `.rodata, ultra/audio/synthesizer`; leaving it as raw rodata emits duplicate raw symbols and shifts later data references by `0x10`.
+
+`alSynNew` matches with the real upstream `PVoice` layout (`sizeof(PVoice) == 0xDC`) and the otherwise-unused upstream locals `ALVoice *vv` and `ALVoice *vvoices`, which shape IDO's stack/register allocation. `alAudioFrame` is still best kept as a per-function asm include for now; the close C port keeps the correct size but differs in stack placement for `tmp` and register allocation around the client callback loop.

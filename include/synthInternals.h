@@ -83,14 +83,6 @@ typedef struct ALFilter_s {
     s32                 type;
 } ALFilter;
 
-typedef struct PVoice_s {
-    ALLink               node;
-    struct ALVoice_s    *vvoice;
-    ALFilter            *channelKnob;
-    char                 _pad[0xD8 - 0x10];
-    s32                  offset;
-} PVoice;
-
 typedef struct {
     struct ALParam_s    *next;
     s32                 delta;
@@ -112,12 +104,20 @@ typedef struct ALSave_s {
     s32                 first;
 } ALSave;
 
+void alSaveNew(ALSave *r);
+Acmd *alSavePull(void *f, s16 *outp, s32 outCount, s32 sampleOffset, Acmd *p);
+s32 alSaveParam(void *f, s32 paramID, void *param);
+
 typedef struct ALMainBus_s {
     ALFilter            filter;
     s32                 sourceCount;
     s32                 maxSources;
     ALFilter            **sources;
 } ALMainBus;
+
+void alMainBusNew(ALMainBus *m, void *ptr, s32 len);
+Acmd *alMainBusPull(void *f, s16 *outp, s32 outCount, s32 sampleOffset, Acmd *p);
+s32 alMainBusParam(void *filter, s32 paramID, void *param);
 
 void alFilterNew(ALFilter *f, ALCmdHandler h, ALSetParam s, s32 type);
 
@@ -221,10 +221,39 @@ Acmd *alFxPull(void *f, s16 *outp, s32 out, s32 sampleOffset, Acmd *p);
 s32 alFxParam(void *filter, s32 paramID, void *param);
 s32 alFxParamHdl(void *filter, s32 paramID, void *param);
 
+typedef struct ALAuxBus_s {
+    ALFilter            filter;
+    s32                 sourceCount;
+    s32                 maxSources;
+    ALFilter            **sources;
+    ALFx                fx[1];
+} ALAuxBus;
+
+void alAuxBusNew(ALAuxBus *m, void *ptr, s32 len);
+Acmd *alAuxBusPull(void *f, s16 *outp, s32 outCount, s32 sampleOffset, Acmd *p);
+s32 alAuxBusParam(void *filter, s32 paramID, void *param);
+
+void alResampleNew(ALResampler *r, ALHeap *hp);
+Acmd *alResamplePull(void *f, s16 *outp, s32 out, s32 sampleOffset, Acmd *p);
+s32 alResampleParam(void *f, s32 paramID, void *param);
+
+typedef struct PVoice_s {
+    ALLink              node;
+    struct ALVoice_s    *vvoice;
+    ALFilter            *channelKnob;
+    ALLoadFilter        decoder;
+    ALResampler         resampler;
+    ALEnvMixer          envmixer;
+    s32                 offset;
+} PVoice;
+
 #define _init_lpfilter init_lpfilter
 void _init_lpfilter(ALLowPass *lp);
 
 ALParam *__allocParam(void);
+void __freeParam(ALParam *param);
+void _freePVoice(ALSynth *drvr, PVoice *pvoice);
+void _collectPVoices(ALSynth *drvr);
 s32 _timeToSamples(ALSynth *synth, s32 micros);
 
 #endif
