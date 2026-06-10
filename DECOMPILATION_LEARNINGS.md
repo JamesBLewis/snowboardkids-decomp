@@ -265,9 +265,17 @@ The target `audio/save.c` range at `0xAF1D0` is ordered `alSaveParam` first, the
 
 `audio/mainbus.c` and `audio/auxbus.c` have the same ROM-order `Param`-then-`Pull` layout, but direct C ports do not currently match: IDO keeps the fifth `Acmd *p` argument in `$s1` for the initial clear commands, while the target loads it into `$t0` before saving callee registers and only later uses `$s1` for `sources`. Leave those ranges raw until the exact source shape or flags are found.
 
-## syncprintf.c Cannot Be Split to Only osSyncPrintf
+## syncprintf.c Needs an Aligned Source Chunk
 
-The `ultra:syncprintf.c` comment on the large `0x464E0` raw segment is misleading: `osSyncPrintf` is only the tiny final-ROM stub at `0x49A4C..0x49A60`, surrounded by unrelated/raw functions. Compiling an empty variadic `osSyncPrintf` with `-O1` emits the exact 0x14-byte instruction sequence, but the C object's `.text` section pads to 0x20. Splitting only `0x49A4C..0x49A60` shifts the following raw function at `0x49A60`; convert the following function too or leave this range raw.
+The `ultra:syncprintf.c` comment on the large `0x464E0` raw segment is misleading: `osSyncPrintf` is only the tiny final-ROM stub at `0x49A4C..0x49A60`, surrounded by unrelated/raw functions. Compiling an empty variadic `osSyncPrintf` with `-O1` emits the exact 0x14-byte instruction sequence, but the C object's `.text` section pads to 0x20. Own `0x49A40..0x49A80` as a source chunk instead; it includes the preceding print-stub tail, `osSyncPrintf`, and the first aligned bytes of the following raw function so downstream ROM offsets do not shift.
+
+## ptstart Needs an Aligned Source Chunk
+
+The `ultra:initialize.c` comment on the large `0x41880` raw segment is misleading: the only libultra-style symbol in that area is `ptstart` at `0x43164..0x43174`. Splitting exactly at `0x43164` shifts the following raw function because the object text section wants 0x10-byte alignment. Own `0x43160..0x43180` as a source chunk instead; it includes the previous delay-slot instruction, `ptstart`, and the first aligned bytes of the following raw function.
+
+## filter.c Is the Small alFilterNew Range
+
+The `0xB0B50..0xB0B70` range is upstream `audio/filter.c` `alFilterNew`. It is safe to match as a standalone C object because the range starts and ends on 0x10-byte boundaries; IDO emits the field stores plus `jr ra` and the needed trailing nop padding without shifting the following `reverb.c` object.
 
 ## reverb.c Uses libultra 2.0I Audio O3
 
