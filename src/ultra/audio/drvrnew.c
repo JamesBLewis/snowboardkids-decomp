@@ -119,7 +119,7 @@ void alAuxBusNew(ALAuxBus *m, void *sources, s32 maxSources)
     m->sources = (ALFilter **)sources;
 }
 
-#pragma GLOBAL_ASM("src/ultra/audio/drvrnew/alResampleNew.s")
+#pragma GLOBAL_ASM("asm/nonmatchings/ultra/audio/drvrnew/alResampleNew.s")
 
 void alLoadNew(ALLoadFilter *f, ALDMANew dmaNew, ALHeap *hp) 
 {
@@ -145,7 +145,7 @@ void alLoadNew(ALLoadFilter *f, ALDMANew dmaNew, ALHeap *hp)
     f->memin = 0;
 }
 
-#pragma GLOBAL_ASM("src/ultra/audio/drvrnew/alEnvmixerNew.s")
+#pragma GLOBAL_ASM("asm/nonmatchings/ultra/audio/drvrnew/alEnvmixerNew.s")
 
 void _init_lpfilter(ALLowPass *lp)
 {
