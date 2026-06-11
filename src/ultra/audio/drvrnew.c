@@ -86,67 +86,6 @@ static s32 NULL_PARAMS[10] = {
     0, 0, 0, 0, 0, 0, 0, 0
 };
 
-void alSaveNew(ALSave *f) 
-{
-    /*
-     * init filter superclass
-     */
-
-    alFilterNew((ALFilter *) f, alSavePull, alSaveParam, AL_SAVE);
-    
-    /*
-     * init the save state, which is a virtual dram address
-     */
-    
-    f->dramout = 0;
-    f->first = 1;
-    
-}
-
-void alMainBusNew(ALMainBus *m, void *sources, s32 maxSources)
-{
-    alFilterNew((ALFilter *) m, alMainBusPull, alMainBusParam, AL_MAINBUS);
-    m->sourceCount = 0;
-    m->maxSources = maxSources;
-    m->sources = (ALFilter **)sources;
-}
-
-void alAuxBusNew(ALAuxBus *m, void *sources, s32 maxSources)
-{
-    alFilterNew((ALFilter *) m, alAuxBusPull, alAuxBusParam, AL_AUXBUS);
-    m->sourceCount = 0;
-    m->maxSources = maxSources;
-    m->sources = (ALFilter **)sources;
-}
-
-#pragma GLOBAL_ASM("asm/nonmatchings/ultra/audio/drvrnew/alResampleNew.s")
-
-void alLoadNew(ALLoadFilter *f, ALDMANew dmaNew, ALHeap *hp) 
-{
-    s32
-        i;
-    
-    /*
-     * init filter superclass
-     */
-
-    alFilterNew((ALFilter *) f, alAdpcmPull, alLoadParam, AL_ADPCM);
-
-    f->state = alHeapAlloc(hp, 1, sizeof(ADPCM_STATE));
-    f->lstate = alHeapAlloc(hp, 1, sizeof(ADPCM_STATE));
-    
-    f->dma = dmaNew(&f->dmaState);
-    
-    /*
-     * init the adpcm state
-     */
-    f->lastsam = 0;
-    f->first = 1;
-    f->memin = 0;
-}
-
-#pragma GLOBAL_ASM("asm/nonmatchings/ultra/audio/drvrnew/alEnvmixerNew.s")
-
 void _init_lpfilter(ALLowPass *lp)
 {
     s32		i, temp;
@@ -254,4 +193,101 @@ void alFxNew(ALFx *r, ALSynConfig *c, ALHeap *hp)
 	    j++;
 	}
     }
+}
+
+void alEnvmixerNew(ALEnvMixer *e, ALHeap *hp)
+{
+    alFilterNew((ALFilter *) e, alEnvmixerPull, alEnvmixerParam, AL_ENVMIX);
+
+    e->state = alHeapDBAlloc(0, 0, hp, 1, sizeof(ENVMIX_STATE));
+
+    e->first = 1;
+    e->motion = AL_STOPPED;
+    e->volume = 1;
+    e->ltgt = 1;
+    e->rtgt = 1;
+    e->cvolL = 1;
+    e->cvolR = 1;
+    e->dryamt = 0;
+    e->wetamt = 0;
+    e->lratm = 1;
+    e->lratl = 0;
+    e->delta = 0;
+    e->segEnd = 0;
+    e->pan = 0;
+    e->ctrlList = 0;
+    e->ctrlTail = 0;
+    e->sources = 0;
+}
+
+void alLoadNew(ALLoadFilter *f, ALDMANew dmaNew, ALHeap *hp) 
+{
+    s32
+        i;
+    
+    /*
+     * init filter superclass
+     */
+
+    alFilterNew((ALFilter *) f, alAdpcmPull, alLoadParam, AL_ADPCM);
+
+    f->state = alHeapAlloc(hp, 1, sizeof(ADPCM_STATE));
+    f->lstate = alHeapAlloc(hp, 1, sizeof(ADPCM_STATE));
+    
+    f->dma = dmaNew(&f->dmaState);
+    
+    /*
+     * init the adpcm state
+     */
+    f->lastsam = 0;
+    f->first = 1;
+    f->memin = 0;
+}
+
+void alResampleNew(ALResampler *r, ALHeap *hp)
+{
+    alFilterNew((ALFilter *) r, alResamplePull, alResampleParam, AL_RESAMPLE);
+
+    r->state = alHeapDBAlloc(0, 0, hp, 1, sizeof(RESAMPLE_STATE));
+
+    r->first = 1;
+    r->motion = AL_STOPPED;
+    r->upitch = 0;
+    r->ctrlList = 0;
+    r->ctrlTail = 0;
+    r->delta = 0.0f;
+    r->ratio = 1.0f;
+}
+
+void alAuxBusNew(ALAuxBus *m, void *sources, s32 maxSources)
+{
+    alFilterNew((ALFilter *) m, alAuxBusPull, alAuxBusParam, AL_AUXBUS);
+    m->sourceCount = 0;
+    m->maxSources = maxSources;
+    m->sources = (ALFilter **)sources;
+}
+
+void alMainBusNew(ALMainBus *m, void *sources, s32 maxSources)
+{
+    alFilterNew((ALFilter *) m, alMainBusPull, alMainBusParam, AL_MAINBUS);
+    m->sourceCount = 0;
+    m->maxSources = maxSources;
+    m->sources = (ALFilter **)sources;
+}
+
+void alSaveNew(ALSave *f) 
+{
+    /*
+     * init filter superclass
+     */
+
+    alFilterNew((ALFilter *) f, alSavePull, alSaveParam, AL_SAVE);
+    
+    /*
+     * init the save state, which is a virtual dram address
+     */
+    
+    f->dramout = 0;
+    f->first = 1;
+    
 }
