@@ -77,7 +77,7 @@ segments:
       - [0xA3E0, asm]
       - [0xCE80, asm]
       - [0xD200, asm]
-      - [0xDB70, asm]
+      - [0xDB70, c]
       - [0xDF40, asm]
       - [0xE3F0, asm]
       - [0xF680, asm]

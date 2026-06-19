@@ -2,6 +2,34 @@
 
 Record project-specific compiler behavior, matching patterns, and verified struct or data-layout insights here as they are discovered.
 
+## Game Code Is `-O2 -mips1` (Not `-mips2`)
+
+- **The main/game segment was compiled with IDO `-O2 -mips1`.** Two tells in the
+  target asm prove this: (1) **load-delay `nop`s** (e.g. `lw t7,..; nop; addiu t8,t7,..`)
+  which MIPS2 would not need (it has load interlocks), and (2) **no branch-likely
+  instructions** (`beqzl`/`bnezl`/`beql`/`bnel`), which are MIPS2+ only. Compiling at
+  the project-default `-mips2` emits `beqzl` and omits the load-delay nops, so it will
+  never match game code. Add a per-object override `$(BUILD_DIR)/src/<seg>.o: C_MIPS = -mips1`
+  (integration may prefer flipping the global `C_MIPS` default to `-mips1` with
+  `-mips2`/`-mips3` overrides kept for libultra).
+- **`-O2` (not `-O1`) is still correct for the addressing pattern.** At `-O1`, IDO loads
+  a global pointer's value directly each use (`lui;lw %lo`); the target computes the
+  pointer variable's address once (`lui;addiu`) then reloads `0(reg)`, which is `-O2`.
+- **The per-function workspace `build.sh` is misleading.** It defaults to `-O1` and
+  `-mips2` and omits real Makefile flags. Use it only as a rough signal; the authoritative
+  check is building the real object (`make build/src/<seg>.o`) and `tools/asm-differ/diff.py`.
+  Note diff.py reads the target ROM at the *current build's* symbol address, so if a
+  size mismatch shifts later functions, diff.py output for them becomes misaligned/garbage —
+  fix size mismatches first.
+
+## Matching Branch Direction (IDO if/else)
+
+- For `if (cond) {A} else {B}`, IDO branches to `B` when `cond` is false and lays `A` as
+  the fall-through. So `if (x == C){A}else{B}` emits `bne x,C,B`; `if (x != C){A}else{B}`
+  emits `beq x,C,B`. Match the target's branch opcode/direction by choosing which side is
+  the fall-through. In practice these state-update functions often test `!= 0xFF` first
+  (func path as fall-through) with the simpler branch placed at the bottom.
+
 ## IDO Optimization Levels
 
 - **Most ultra IO/OS files match at `-O1`.** Audio library files (`src/ultra/audio/`) and GU math files (`src/ultra/gu/`) often require `-O2`. Some complex audio files (`reverb.c`, `env.c`, `xprintf.c`, `xldtob.c`) require direct IDO `-O3` because the asm-processor rejects `-O3` due to function reordering.
