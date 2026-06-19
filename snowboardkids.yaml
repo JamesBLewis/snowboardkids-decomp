@@ -103,7 +103,7 @@ segments:
       - [0x3F900, asm]
       - [0x40120, asm]
       - [0x41880, asm]
-      - [0x43160, asm, ultra/os/ptstart]
+      - [0x43160, asm]
       - [0x43180, asm]
       - [0x437C0, asm]
       - [0x43CD0, asm]
