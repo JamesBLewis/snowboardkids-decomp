@@ -181,7 +181,7 @@ segments:
       - [0xA5970, c, ultra/io/viswapbuf]
       - [0xA59C0, hasm, ultra/os/setintmask]
       - [0xA5A60, c, ultra/io/vigetcurrframebuf]
-      - [0xA5AA0, asm]
+      - [0xA5AA0, c, ultra/io/vigetnextframebuf]
       - [0xA5AE0, c, ultra/audio/heapinit]
       - [0xA5B20, c, ultra/audio/heapalloc]
       - [0xA5B80, c, ultra/audio/synaddplayer]
