@@ -168,6 +168,7 @@ osPfsInitPak = 0x800A1620; // type:func
 osPfsNumFiles = 0x800A1A50; // type:func
 osPfsReadWriteFile = 0x800A1DEC; // type:func
 osPfsAllocateFile = 0x800A21F0; // type:func
+osPfsRepairId = 0x800A29A0; // type:func
 osPfsFileState = 0x800A2C00; // type:func
 osPfsDeleteFile = 0x800A2EF0; // type:func
 sprintf_text_0000 = 0x800A3500; // type:func

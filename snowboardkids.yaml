@@ -156,7 +156,7 @@ segments:
       - [0xA27A0, c, ultra/io/pfsfreeblocks]
       - [0xA28F0, c, ultra/io/pfsreadwritefile]
       - [0xA2DF0, c, ultra/io/pfsallocatefile]
-      - [0xA35A0, asm]
+      - [0xA35A0, c, ultra/io/pfsrepairid]
       - [0xA3800, c, ultra/io/pfsfilestate]
       - [0xA4100, c, ultra/libc/sprintf]
       - [0xA4180, asm]
