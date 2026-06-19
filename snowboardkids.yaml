@@ -255,7 +255,7 @@ segments:
       - [0xAD610, c, ultra/audio/load]
       - [0xAE160, c, ultra/audio/resample]
       - [0xAE460, c, ultra/audio/env]
-      - [0xAF0C0, asm,  ultra/audio/auxbus]
+      - [0xAF0C0, c, ultra/audio/auxbus]
       - [0xAF1D0, c, ultra/audio/save]
       - [0xAF290, c, ultra/io/si]
       - [0xAF2C0, c, ultra/io/leointerrupt]
