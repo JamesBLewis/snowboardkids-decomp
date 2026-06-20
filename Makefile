@@ -104,6 +104,7 @@ $(BUILD_DIR)/src/ultra/io/sptask.o: CFLAGS += -DF3DEX_GBI
 # omits load-delay nops, which does not match.) These per-object overrides are
 # scoped to converted game segments; integration may prefer flipping the global
 # C_MIPS default to -mips1 with -mips2/-mips3 overrides for libultra.
+$(BUILD_DIR)/src/6140.o: C_MIPS = -mips1
 $(BUILD_DIR)/src/CE80.o: C_MIPS = -mips1
 $(BUILD_DIR)/src/D200.o: C_MIPS = -mips1
 $(BUILD_DIR)/src/DB70.o: C_MIPS = -mips1
