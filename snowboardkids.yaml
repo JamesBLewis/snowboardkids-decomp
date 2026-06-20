@@ -72,7 +72,7 @@ segments:
       - [0x6140, c]
       - [0x6870, asm]
       - [0x7B30, asm]
-      - [0x9220, asm]
+      - [0x9220, c]
       - [0x9960, asm]
       - [0xA3E0, asm]
       - [0xCE80, c]
