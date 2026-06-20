@@ -68,7 +68,7 @@ segments:
     subsegments:
       - [0x1050, c]
       - [0x3D40, asm]
-      - [0x5560, asm]
+      - [0x5560, c]
       - [0x6140, c]
       - [0x6870, asm]
       - [0x7B30, asm]
