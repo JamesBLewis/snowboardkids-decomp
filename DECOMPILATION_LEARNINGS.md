@@ -87,3 +87,17 @@ If splitting after a matched helper function causes the C object's `.text` secti
 ## Reuse of Upstream Source
 
 For straightforward libultra functions that don't use `_DEBUG` code, have no local data, and just call simple helpers around struct field assignments, the upstream ultralib source often matches directly without modification. Always try the unmodified upstream source first before making changes.
+
+## Don't Trust libultra Symbol Names by Address Alone
+
+A libultra name in `symbol_addrs.txt` or a yaml segment label can be wrong. `osSyncPrintf` was pre-labeled at `0x80048E4C`, but that address is a lone arg-saving stub sitting amid game display-list code (refs `D_800EC9C2`); the real `osSyncPrintf`/`rmonPrintf` are two byte-identical empty-varargs stubs at `0x800A3580`/`0x800A359C`, inside the libc block between `sprintf` and `ll`. Verify by codegen and link-order position before matching: the libultra TU fingerprint here is *two identical adjacent empty stubs* in the libc cluster, not a single stub in the game region. Note also that libultra functions can be linked into the game text region, so "outside the main libultra block" does not by itself prove a label is fake.
+
+## Converting a Jump-Table Function to Per-Function GLOBAL_ASM Breaks Rodata Refs
+
+When a raw `asm` segment contains a function with a jump table, the table lives
+in a separate `.rodata` object and references the code's local `.L` labels. As a
+single raw asm segment these resolve, but converting the segment to a `c` segment
+extracts each function into its own `GLOBAL_ASM` `.s` file where those `.L`
+labels are file-local and no longer visible to the rodata object, producing
+`undefined reference to .L...` link errors. Don't convert such a segment to `c`
+unless you also handle the jump-table function's labels.
