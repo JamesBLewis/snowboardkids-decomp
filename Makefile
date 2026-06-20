@@ -106,6 +106,7 @@ $(BUILD_DIR)/src/ultra/io/sptask.o: CFLAGS += -DF3DEX_GBI
 # C_MIPS default to -mips1 with -mips2/-mips3 overrides for libultra.
 $(BUILD_DIR)/src/CE80.o: C_MIPS = -mips1
 $(BUILD_DIR)/src/DB70.o: C_MIPS = -mips1
+$(BUILD_DIR)/src/DF40.o: C_MIPS = -mips1
 
 $(BUILD_DIR)/src/ultra/libc/ll.o: C_OPT = -O1
 $(BUILD_DIR)/src/ultra/libc/ll.o: C_MIPS = -mips3 -32
