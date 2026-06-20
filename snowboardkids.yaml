@@ -76,7 +76,7 @@ segments:
       - [0x9960, asm]
       - [0xA3E0, asm]
       - [0xCE80, c]
-      - [0xD200, asm]
+      - [0xD200, c]
       - [0xDB70, c]
       - [0xDF40, c]
       - [0xE3F0, asm]
