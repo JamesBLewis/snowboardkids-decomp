@@ -30,6 +30,16 @@ Record project-specific compiler behavior, matching patterns, and verified struc
   the fall-through. In practice these state-update functions often test `!= 0xFF` first
   (func path as fall-through) with the simpler branch placed at the bottom.
 
+## Global Pointer Read-back After Assignment
+
+- When code assigns a global pointer then immediately uses what it points to, IDO
+  often re-reads *through the global pointer* rather than reusing the literal address.
+  E.g. the target for `D_800EC9C4 = &D_801121E0; (*it).unk2C()` keeps `&D_800EC9C4`
+  in a register and stores `&D_801121E0` to it, then reads the field via that stored
+  value — which matches the C `D_800EC9C4 = &D_801121E0; D_800EC9C4->unk2C();`
+  (access via the global pointer), NOT `D_801121E0.unk2C();` (which collapses to one
+  fewer instruction and won't match).
+
 ## IDO Optimization Levels
 
 - **Most ultra IO/OS files match at `-O1`.** Audio library files (`src/ultra/audio/`) and GU math files (`src/ultra/gu/`) often require `-O2`. Some complex audio files (`reverb.c`, `env.c`, `xprintf.c`, `xldtob.c`) require direct IDO `-O3` because the asm-processor rejects `-O3` due to function reordering.
