@@ -113,7 +113,7 @@ segments:
       - [0x49A80, asm]
       - [0x4A040, asm]
       - [0x4E760, asm]
-      - [0x51BF0, asm]
+      - [0x51BF0, c]
       - [0x54260, asm]
       - [0x562B0, asm]
       - [0x57EA0, asm]
