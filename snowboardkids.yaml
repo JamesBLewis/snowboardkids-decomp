@@ -80,7 +80,7 @@ segments:
       - [0xDB70, c]
       - [0xDF40, c]
       - [0xE3F0, c]
-      - [0xF680, asm]
+      - [0xF680, c]
       - [0x15200, asm]
       - [0x18610, asm]
       - [0x19DD0, asm]
