@@ -105,6 +105,7 @@ $(BUILD_DIR)/src/ultra/io/sptask.o: CFLAGS += -DF3DEX_GBI
 # scoped to converted game segments; integration may prefer flipping the global
 # C_MIPS default to -mips1 with -mips2/-mips3 overrides for libultra.
 $(BUILD_DIR)/src/5560.o: C_MIPS = -mips1
+$(BUILD_DIR)/src/E3F0.o: C_MIPS = -mips1
 $(BUILD_DIR)/src/6870.o: C_MIPS = -mips1
 $(BUILD_DIR)/src/7B30.o: C_MIPS = -mips1
 $(BUILD_DIR)/src/9220.o: C_MIPS = -mips1
