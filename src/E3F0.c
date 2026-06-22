@@ -20,10 +20,13 @@ extern void func_80071824(void *, void *);
 
 extern void func_8000DF9C(void *);
 extern void func_8000E5A0(void *);
-extern void func_8000E9F4(void *);
+extern void func_8000E8CC(void *);
+void func_8000E99C(Obj *);
+void func_8000E9F4(Obj *);
 
 extern u8 D_80124868;
 extern u8 D_800B4FB8;
+extern u8 D_8010B1F0;
 
 #pragma GLOBAL_ASM("asm/nonmatchings/E3F0/func_8000D7F0.s")
 
@@ -62,7 +65,12 @@ void func_8000E874(Obj *arg) {
 
 #pragma GLOBAL_ASM("asm/nonmatchings/E3F0/func_8000E99C.s")
 
-#pragma GLOBAL_ASM("asm/nonmatchings/E3F0/func_8000E9F4.s")
+void func_8000E9F4(Obj *arg) {
+    if (D_8010B1F0 == 1) {
+        func_80071824(arg, &func_8000E99C);
+    }
+    func_800483FC(&D_80124868, &func_8000E8CC, arg);
+}
 
 void func_8000EA44(Obj *arg) {
     arg->unk18 = -0x48;
